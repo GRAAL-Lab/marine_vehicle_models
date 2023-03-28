@@ -51,6 +51,12 @@ void Underwater_Vehicle_Model::DirectDynamics(double h_p, double h_s, double& n_
     linAngAcc(3) = 0.0;
     linAngAcc(4) = 0.0;
     linAngAcc(5) = nir(2); */
+    Eigen::MatrixXf Minv(6,6); // inverse of the system inertia matrix
+    rml::RegularizationData regData;
+    regData.params.lambda = 0.001;
+    regData.params.threshold = 0.00001;
+    Minv = rml::RegularizedPseudoInverse(M, regData);
+    linAngAcc_ = Minv * (B_motor * u_motor - (C + D)*linAngVel_ - g);
 }
 
 Eigen::Vector3d Underwater_Vehicle_Model::ComputeCoriolisAndDragForces(Eigen::Vector6d vehvel){
@@ -193,6 +199,8 @@ Eigen::MatrixXf Underwater_Vehicle_Model::getg(const Eigen::VectorXf &eta)
 
     return g;
 }
+
+
 
 bool Underwater_Vehicle_Model::LoadConfiguration(const libconfig::Config& confObj) noexcept(false)
 {

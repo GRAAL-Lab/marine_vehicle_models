@@ -19,15 +19,22 @@ class Underwater_Vehicle_Model {
     float L; // Geometrical parameter
     float H; // Geometrical parameter
     //Eigen::MatrixXf diagXYZKMN[6];
-    Eigen::Vector3f diagXYZKMN[6];
+    Eigen::VectorXf diagXYZKMN[6];
     Eigen::VectorXf M_a_diag[6];
     Eigen::VectorXf D_diag[6];
 
     Eigen::Vector3f CG; // Center of Gravity
     Eigen::Vector3f CB; // Center of Boyancy
     Eigen::MatrixXf M_a; // added mass Matrix
+    Eigen::MatrixXf M; // entire mass matrix
+    Eigen::MatrixXf C; // entire coriolis matrix
+    Eigen::MatrixXf D; // entire damping matrix
     float G; // Gravity constant
-    float B; // Buoyance, restoring force
+    float B; // Buoyance, buoyant force
+
+    Eigen::MatrixXf B_motor; // thruster allocation matrix
+    Eigen::VectorXf u_motor; // motor commands
+    Eigen::VectorXf g; // restoring force
 
 public:
     //UlisseModelParameters params;
