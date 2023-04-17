@@ -15,13 +15,14 @@ struct UnderwaterModelParameters{
     Eigen::VectorXf diagXYZKMN[6];
     Eigen::VectorXf M_a_diag[6];
     Eigen::VectorXf D_diag[6];
+    Eigen::VectorXf K_diag[6];
     Eigen::Vector3f CG; // Center of Gravity
     Eigen::Vector3f CB; // Center of Boyancy
 
     float G; // Gravity constant
     float B; // Buoyance, buoyant force
 
-    Eigen::MatrixXf B_motor; // thruster allocation matrix
+    Eigen::MatrixXf T; // thruster allocation matrix
     Eigen::VectorXf u_motor; // motor commands
 
 
@@ -44,7 +45,7 @@ struct UnderwaterModelParameters{
         //C.setZero();
         //D.setZero();
 
-        B_motor.setZero();
+        //K.setZero();
         u_motor.setZero();
         //g.setZero();
     }
@@ -73,9 +74,11 @@ class Underwater_Vehicle_Model {
     //bool LoadConfiguration(const libconfig::Config& confObj);
     Eigen::MatrixXf M_a; // added mass Matrix
     Eigen::MatrixXf M; // entire mass matrix
+    Eigen::MatrixXf K; // thrust coefficient
     Eigen::MatrixXf C; // entire coriolis matrix
     Eigen::MatrixXf D; // entire damping matrix
     Eigen::VectorXf g; // restoring force
+    Eigen::VectorXf F; // thruster forces
 
 public:
     UnderwaterModelParameters params;
@@ -85,7 +88,7 @@ public:
     double GetThrusterForce(double n, double linXVel);
     double PercentageToRPM(double h);
     double RPMToPercentage(double n);
-    void DirectDynamics(const Eigen::Vector6d& linAngVel_, const Eigen::Vector6d& eta, Eigen::Vector6d& linAngAcc_);
+    void DirectDynamics(const Eigen::Vector6d& volt,const Eigen::Vector6d& linAngVel_, const Eigen::Vector6d& eta, Eigen::Vector6d& linAngAcc_);
     Eigen::Vector2d ThusterAllocation(Eigen::Vector2d& tau);
     void InverseMotorsEquations(const Eigen::Vector6d& linAngVel, Eigen::Vector2d thrust_force, double& h_p, double& h_s);
     void ThrustersSaturation(double lThruster, double rThruster, double thMin, double thMax, double& lSatOut, double& rSatOut);
@@ -96,6 +99,7 @@ public:
     Eigen::MatrixXf getg(const Eigen::VectorXf &eta);
     void UpdateMatrices(const Eigen::VectorXf &v_rel,const Eigen::VectorXf &eta);
     void InitializeMatrices(const Eigen::VectorXf &v_rel,const Eigen::VectorXf &eta);
+    Eigen::VectorXf VoltageToForces(const Eigen::VectorXf& volt);
 };
 
 #endif // UNDERWATER_VEHICLE_MODEL_H

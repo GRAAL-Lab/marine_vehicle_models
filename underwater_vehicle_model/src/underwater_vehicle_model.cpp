@@ -3,22 +3,19 @@
 
 Underwater_Vehicle_Model::Underwater_Vehicle_Model() { }
 
-void Underwater_Vehicle_Model::DirectDynamics(const Eigen::Vector6d& linAngVel_, const Eigen::Vector6d& eta, Eigen::Vector6d& linAngAcc_)
+void Underwater_Vehicle_Model::DirectDynamics(const Eigen::Vector6d& volt,const Eigen::Vector6d& linAngVel_, const Eigen::Vector6d& eta, Eigen::Vector6d& linAngAcc_)
 {
 
-
+    F = VoltageToForces(volt);
     UpdateMatrices(linAngVel_, eta);
     Eigen::MatrixXf Minv(6,6); // inverse of the system inertia matrix
     rml::RegularizationData regData;
     regData.params.lambda = 0.001;
     regData.params.threshold = 0.00001;
     Minv = rml::RegularizedPseudoInverse(M, regData);
-    linAngAcc_ = Minv * (params.B_motor * params.u_motor - (C + D)*linAngVel_ - g);
+    linAngAcc_ = Minv * (params.T * K * F - (C + D)*linAngVel_ - g);
 }
 
-Eigen::Vector3d Underwater_Vehicle_Model::ComputeCoriolisAndDragForces(Eigen::Vector6d vehvel){
-
-}
 
 Eigen::Matrix3f Underwater_Vehicle_Model::get_TensorInertia()
 {
@@ -45,6 +42,13 @@ Eigen::Matrix3f Underwater_Vehicle_Model::get_TensorInertia()
     TensorInertia_b = TensorInertia_g - params.m * (rml::Vect3ToSkew(params.CG)*rml::Vect3ToSkew(params.CG));
 
     return TensorInertia_b;
+}
+
+Eigen::VectorXf Underwater_Vehicle_Model::VoltageToForces(const Eigen::VectorXf& volt){
+    Eigen::VectorXf F;
+    for(int i=0; i<6; i++)
+        F[i] = -140.3 * pow(volt[i],9) + 389.9 * pow(volt[i],7) - 404.1 * pow(volt[i],5) + 176.0 * pow(volt[i],3) + 8.9 * volt[i];
+    return F;
 }
 
 Eigen::MatrixXf Underwater_Vehicle_Model::getM()
@@ -161,6 +165,7 @@ Eigen::MatrixXf Underwater_Vehicle_Model::getg(const Eigen::VectorXf &eta)
 }
 
 void Underwater_Vehicle_Model::InitializeMatrices(const Eigen::VectorXf &v_rel,const Eigen::VectorXf &eta){
+    K = params.K_diag->asDiagonal().toDenseMatrix();
     M = getM();
     C = getC(v_rel);
     D = getD(v_rel);
