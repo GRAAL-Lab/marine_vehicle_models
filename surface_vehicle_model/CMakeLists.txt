@@ -1,20 +1,22 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.1)
 project(surface_vehicle_model)
 
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
+add_compile_options(-std=c++17)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(builtin_interfaces REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(rml REQUIRED)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+
+find_package(catkin REQUIRED COMPONENTS
+    roscpp
+    roslib
+    std_msgs
+)
 
 # Add files in the tree of "Projects" view in QtCreator
 file(GLOB_RECURSE SOURCE_FILES
@@ -24,34 +26,45 @@ file(GLOB_RECURSE SOURCE_FILES
 )
 add_custom_target(.Files. SOURCES ${SOURCE_FILES})
 
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES surface_vehicle_model
+    CATKIN_DEPENDS roscpp std_msgs
+    #  DEPENDS system_lib
+)
+
 include_directories(
   include
-  ${ulisse_msgs_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
 )
 
 add_library(surface_vehicle_model_lib src/surfacevehiclemodel.cpp)
-target_link_libraries(surface_vehicle_model_lib rml)
+add_dependencies(${PROJECT_NAME}_lib ${catkin_EXPORTED_TARGETS})
+target_link_libraries(surface_vehicle_model_lib ${catkin_LIBRARIES} rml)
 
-ament_export_include_directories(include)
-ament_export_libraries(surface_vehicle_model_lib)
+## Mark executables for installation
+#install(TARGETS ${PROJECT_NAME}_node
+#    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#   )
 
-# install artifacts
-install(DIRECTORY
-  conf
-  DESTINATION share/${PROJECT_NAME}
-)
+## Mark libraries for installation
+# install(TARGETS ${PROJECT_NAME}
+#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+# )
 
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
+## Mark cpp header files for installation
+install(DIRECTORY include/${PROJECT_NAME}/
+    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+    FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.hpp"
+    PATTERN ".svn" EXCLUDE
+    )
 
-install(
-  TARGETS surface_vehicle_model_lib # foo_bin
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-
-ament_package()
+## Mark other files for installation (e.g. launch and bag files, etc.)
+#install(FILES
+    # myfile1
+#    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+#    )
