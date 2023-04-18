@@ -1,6 +1,6 @@
 # Marine Vehicle Models
 
-A package that has a libraries for marine vehicle models.
+A package that has libraries for marine vehicle models.
 
 ## Surface Vehicle Model
 
@@ -9,4 +9,4 @@ Dynamic model of a surface vehicle with two thrusters.
 
 ## Underwater Vehicle Model
 
-Dynamic model of an underwater vehicle (for now ROV).
+Dynamic model of an underwater vehicle (for now we work on ROVs).

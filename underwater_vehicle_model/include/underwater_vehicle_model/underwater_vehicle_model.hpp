@@ -22,7 +22,7 @@ struct UnderwaterModelParameters{
     float G; // Gravity constant
     float B; // Buoyance, buoyant force
 
-    Eigen::MatrixXf T; // thruster allocation matrix
+    Eigen::VectorXf T_vector; // thruster allocation matrix
 
 
 
@@ -46,7 +46,7 @@ struct UnderwaterModelParameters{
         //D.setZero();
 
         //K.setZero();
-        u_motor.setZero();
+        //u_motor.setZero();
         //g.setZero();
     }
 
@@ -83,10 +83,10 @@ struct UnderwaterModelParameters{
             return false;
         if (!ctb::GetParamVector(blueROVmodel, B, "B"))
             return false;
-        if (!ctb::GetParamVector(blueROVmodel, T, "T"))// can we read a matrix from con file???????
+        if (!ctb::GetParamVector(blueROVmodel, T_vector, "T")) // can we read a matrix from con file??????? convert to matrix
             return false;
-        if (!ctb::GetParamVector(blueROVmodel, CB, "CB"))
-            return false;
+        //if (!ctb::GetParamVector(blueROVmodel, CB, "CB"))
+        //    return false;
 
 
 
@@ -105,6 +105,7 @@ class Underwater_Vehicle_Model {
     Eigen::MatrixXf M_a; // added mass Matrix
     Eigen::MatrixXf M; // entire mass matrix
     Eigen::MatrixXf K; // thrust coefficient
+    Eigen::MatrixXf T; // thrust configuration matrix
     Eigen::MatrixXf C; // entire coriolis matrix
     Eigen::MatrixXf D; // entire damping matrix
     Eigen::VectorXf g; // restoring force

@@ -13,7 +13,7 @@ void Underwater_Vehicle_Model::DirectDynamics(const Eigen::Vector6d& volt,const 
     regData.params.lambda = 0.001;
     regData.params.threshold = 0.00001;
     Minv = rml::RegularizedPseudoInverse(M, regData);
-    linAngAcc_ = Minv * (params.T * K * F - (C + D)*linAngVel_ - g);
+    linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ - g);
 }
 
 
@@ -166,6 +166,13 @@ Eigen::MatrixXf Underwater_Vehicle_Model::getg(const Eigen::VectorXf &eta)
 
 void Underwater_Vehicle_Model::InitializeMatrices(const Eigen::VectorXf &v_rel,const Eigen::VectorXf &eta){
     K = params.K_diag->asDiagonal().toDenseMatrix();
+    T.row(0) = params.T_vector.segment(1,6);
+    T.row(1) = params.T_vector.segment(7,6);
+    T.row(2) = params.T_vector.segment(19,6);
+    T.row(3) = params.T_vector.segment(25,6);
+    T.row(4) = params.T_vector.segment(31,6);
+    T.row(5) = params.T_vector.segment(37,6);
+
     M = getM();
     C = getC(v_rel);
     D = getD(v_rel);
