@@ -23,7 +23,7 @@ struct UnderwaterModelParameters{
     float B; // Buoyance, buoyant force
 
     Eigen::MatrixXf T; // thruster allocation matrix
-    Eigen::VectorXf u_motor; // motor commands
+
 
 
     UnderwaterModelParameters()
@@ -57,6 +57,36 @@ struct UnderwaterModelParameters{
 
         if (!ctb::GetParamVector(blueROVmodel, m, "m"))
             return false;
+        if (!ctb::GetParamVector(blueROVmodel, rho, "rho"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, L, "L"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, H, "H"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, G, "G"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, B, "B"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, diagXYZKMN, "diagXYZKMN"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, M_a_diag, "M_a_diag"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, D_diag, "D_diag"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, K_diag, "K_diag"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, CG, "CG"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, CB, "CB"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, G, "G"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, B, "B"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, T, "T"))// can we read a matrix from con file???????
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, CB, "CB"))
+            return false;
 
 
 
@@ -79,6 +109,7 @@ class Underwater_Vehicle_Model {
     Eigen::MatrixXf D; // entire damping matrix
     Eigen::VectorXf g; // restoring force
     Eigen::VectorXf F; // thruster forces
+    Eigen::VectorXf u_motor; // motor commands
 
 public:
     UnderwaterModelParameters params;

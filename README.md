@@ -1,29 +1,12 @@
-# README #
+# Marine Vehicle Models
 
-This README would normally document whatever steps are necessary to get your application up and running.
+A package that has a libraries for marine vehicle models.
 
-### What is this repository for? ###
+## Surface Vehicle Model
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+Dynamic model of a surface vehicle with two thrusters.
 
-### How do I get set up? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+## Underwater Vehicle Model
 
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+Dynamic model of an underwater vehicle (for now ROV).
