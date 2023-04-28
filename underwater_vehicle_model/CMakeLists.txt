@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.5)
 project(underwater_vehicle_model)
+
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,10 +8,6 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
-
 find_package(rclcpp REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -23,7 +20,14 @@ file(GLOB_RECURSE SOURCE_FILES
     "launch/*.py"
     "conf/*"
 )
+
 add_custom_target(.Files. SOURCES ${SOURCE_FILES})
+
+include_directories(
+  include
+  ${rov_msgs_INCLUDE_DIRS}
+)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -36,22 +40,30 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+
+add_library(underwater_vehicle_model_lib src/underwater_vehicle.cpp)
+target_link_libraries(underwater_vehicle_model_lib rml)
+
+
+# install artifacts
 install(DIRECTORY
   conf
-  DESTINATION share/${PROJECT_NAME}/
+  DESTINATION share/${PROJECT_NAME}
 )
 
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+install(
+  TARGETS underwater_vehicle_model_lib # foo_bin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+ament_export_include_directories(include)
+ament_export_libraries(underwater_vehicle_model_lib)
 
 ament_package()
-
-include_directories(
-  include
-  ${underwater_vehicle_model_INCLUDE_DIRS}
-)
-
-## Libraries
-add_library(UnderwaterVehicleClass src/underwater_vehicle_model.cpp)
-#ament_target_dependencies(UnderwaterVehicleClass rclcpp ament_index_cpp)
-#target_link_libraries(UnderwaterVehicleClass ${underwater_vehicle_model_LIBRARIES} Geographic rml)
-
-set(src/underwater_vehicle_model.cpp)
