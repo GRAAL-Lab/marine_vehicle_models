@@ -18,13 +18,13 @@ struct UnderwaterModelParameters{
     Eigen::Vector6d K_diag;
     Eigen::Vector3d CG; // Center of Gravity
     Eigen::Vector3d CB; // Center of Boyancy
+    Eigen::Vector3d Ixyz; // Ix, Iy and Iz
 
     float G; // Gravity constant
     float B; // Buoyance, buoyant force
 
     Eigen::VectorXd T_vector; // thruster allocation matrix written as a vector (to read it from conf file)
-
-
+    std::vector<float> Tvec;
 
     UnderwaterModelParameters()
         : m(0.0)
@@ -80,6 +80,10 @@ struct UnderwaterModelParameters{
             return false;
         if (!ctb::GetParamVector(blueROVmodel, CB, "CB"))
             return false;
+        if (!ctb::GetParamVector(blueROVmodel, Ixyz, "Ixyz"))
+            return false;
+
+        //T_vector.resize(36);
         if (!ctb::GetParamVector(blueROVmodel, T_vector, "T")) // can we read a matrix from con file??????? convert to matrix
             return false;
 
@@ -95,15 +99,16 @@ class Underwater_Vehicle {
     void InverseMotorEquation(const Eigen::Vector6d& linAngVel, double& thrust_force, double& thruster_perc); // double& thruster or without&?????
     Eigen::Matrix3d get_TensorInertia();
     //bool LoadConfiguration(const libconfig::Config& confObj);
-    Eigen::MatrixXd M_a; // added mass Matrix
-    Eigen::MatrixXd M; // entire mass matrix
-    Eigen::MatrixXd K; // thrust coefficient
-    Eigen::MatrixXd T; // thrust configuration matrix
-    Eigen::MatrixXd C; // entire coriolis matrix
-    Eigen::MatrixXd D; // entire damping matrix
-    Eigen::VectorXd g; // restoring force
-    Eigen::VectorXd F; // thruster forces
-    Eigen::VectorXd u_motor; // motor commands
+    Eigen::Matrix6d M_a; // added mass Matrix
+    Eigen::Matrix6d M; // entire mass matrix
+    Eigen::Matrix6d K; // thrust coefficient
+    Eigen::Matrix6d T; // thrust configuration matrix
+    Eigen::Matrix6d C; // entire coriolis matrix
+    Eigen::Matrix6d D; // entire damping matrix
+    Eigen::Vector6d g; // restoring force
+    Eigen::Vector6d F; // thruster forces
+    Eigen::Vector6d u_motor; // motor commands
+    Eigen::Matrix3d I0; // motor commands
 
 public:
     UnderwaterModelParameters params;
@@ -113,14 +118,14 @@ public:
     double GetThrusterForce(double n, double linXVel);
     double PercentageToRPM(double h);
     double RPMToPercentage(double n);
-    void DirectDynamics(const Eigen::Vector6d& volt,const Eigen::Vector6d& linAngVel_, const Eigen::Vector6d& eta, Eigen::Vector6d& linAngAcc_);
+    void DirectDynamics(const Eigen::Vector6d& volt, const Eigen::Vector6d& eta, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
     Eigen::Vector2d ThusterAllocation(Eigen::Vector2d& tau);
     void InverseMotorsEquations(const Eigen::Vector6d& linAngVel, Eigen::Vector2d thrust_force, double& h_p, double& h_s);
     void ThrustersSaturation(double lThruster, double rThruster, double thMin, double thMax, double& lSatOut, double& rSatOut);
     //void ThrusterDynamicAllocator(const double f_des, const double n_des, double& h_s, double &h_p);
-    Eigen::MatrixXd getM();
-    Eigen::MatrixXd getC(const Eigen::Vector6d &v_ref);
-    Eigen::MatrixXd getD(const Eigen::Vector6d &v_rel);
+    Eigen::Matrix6d getM();
+    Eigen::Matrix6d getC(const Eigen::Vector6d &v_ref);
+    Eigen::Matrix6d getD(const Eigen::Vector6d &v_rel);
     Eigen::Vector6d getg(const Eigen::Vector6d &eta);
     void UpdateMatrices(const Eigen::Vector6d &v_rel,const Eigen::Vector6d &eta);
     void InitializeMatrices(const Eigen::Vector6d &v_rel,const Eigen::Vector6d &eta);
