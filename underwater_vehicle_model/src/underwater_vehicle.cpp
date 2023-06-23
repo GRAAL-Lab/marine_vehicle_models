@@ -12,6 +12,8 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt, const Eigen
 {
 
     F = VoltageToForces(volt);
+    //F.setOnes();
+
     UpdateMatrices(linAngVel_, eta);
     Eigen::Matrix6d Minv; // inverse of the system inertia matrix
     rml::RegularizationData regData;
@@ -21,6 +23,17 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt, const Eigen
     linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ - g);
     std::cout << "linAngAcc_ = "<< linAngAcc_ << std::endl;
     std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
+    std::cout << "F_voltage = "<< F << std::endl;
+    std::cout << "K = "<< K << std::endl;
+    std::cout << "T = "<< T << std::endl;
+    std::cout << "Minv = "<< Minv << std::endl;
+
+    Eigen::Matrix6d tem;
+    tem = T * K ;
+    std::cout << "tem = "<< tem<< std::endl;
+
+    std::cout << "tem * F = "<< tem * F<< std::endl;
+
     std::cout << std::endl;
 }
 
