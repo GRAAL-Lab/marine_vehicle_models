@@ -15,24 +15,21 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt, const Eigen
     //F.setOnes();
 
     UpdateMatrices(linAngVel_, eta);
-    Eigen::Matrix6d Minv; // inverse of the system inertia matrix
-    rml::RegularizationData regData;
-    regData.params.lambda = 0.001;
-    regData.params.threshold = 0.00001;
-    Minv = rml::RegularizedPseudoInverse(M, regData);
+
     linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ - g);
-    std::cout << "linAngAcc_ = "<< linAngAcc_ << std::endl;
-    std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
-    std::cout << "F_voltage = "<< F << std::endl;
-    std::cout << "K = "<< K << std::endl;
-    std::cout << "T = "<< T << std::endl;
-    std::cout << "Minv = "<< Minv << std::endl;
+    //std::cout << "linAngAcc_ = "<< linAngAcc_ << std::endl;
+    //std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
+    //std::cout << "F_voltage = "<< F << std::endl;
 
-    Eigen::Matrix6d tem;
-    tem = T * K ;
-    std::cout << "tem = "<< tem<< std::endl;
+    //std::cout << "K = "<< K << std::endl;
+    //std::cout << "T = "<< T << std::endl;
+    //std::cout << "Minv = "<< Minv << std::endl;
 
-    std::cout << "tem * F = "<< tem * F<< std::endl;
+    //Eigen::Matrix6d tem;
+    //tem = T * K ;
+    //std::cout << "tem = "<< tem<< std::endl;
+
+    //std::cout << "tem * F = "<< tem * F<< std::endl;
 
     std::cout << std::endl;
 }
@@ -104,9 +101,19 @@ Eigen::Matrix6d Underwater_Vehicle::getM()
     M.setZero();
     M = M_RB + M_a;
 
-    std::cout << "M = "<< M << std::endl;
+    //std::cout << "M = "<< M << std::endl;
 
     return M;
+}
+
+Eigen::Matrix6d Underwater_Vehicle::getInvM()
+{
+    Eigen::Matrix6d M_inv; // inverse of the system inertia matrix
+    rml::RegularizationData regData;
+    regData.params.lambda = 0.001;
+    regData.params.threshold = 0.00001;
+    M_inv = rml::RegularizedPseudoInverse(M, regData);
+    return M_inv;
 }
 
 
@@ -152,7 +159,7 @@ Eigen::Matrix6d Underwater_Vehicle::getC(const Eigen::Vector6d &v_rel)
     Eigen::Matrix6d C;
     C = C_RB + C_a; // as says the definition
 
-    std::cout << "C = "<< C << std::endl;
+    //std::cout << "C = "<< C << std::endl;
 
     return C;
 }
@@ -171,7 +178,7 @@ Eigen::Matrix6d Underwater_Vehicle::getD(const Eigen::Vector6d &v_rel)
     D.diagonal() = - x;
     //D.diagonal() = - v_rel.transpose()*params.D_diag.asDiagonal();
 
-    std::cout << "D = "<< D<< std::endl;
+    //std::cout << "D = "<< D<< std::endl;
 
     return D;
 }
@@ -200,11 +207,11 @@ Eigen::Vector6d Underwater_Vehicle::getg(const Eigen::Vector6d &eta)
     Eigen::Vector3d fG = params.m * params.G * Eigen::Vector3d::UnitZ();
     Eigen::Vector3d fB = - params.B * Eigen::Vector3d::UnitZ();
     F_earthF = fG + fB;
-    std::cout << "fG = "<< fG << std::endl;
-    std::cout << "fB = "<< fB << std::endl;
-    std::cout << "params.m = "<< params.m << std::endl;
-    std::cout << "params.G = "<< params.G << std::endl;
-    std::cout << "params.B = "<< params.B << std::endl;
+    //std::cout << "fG = "<< fG << std::endl;
+    //std::cout << "fB = "<< fB << std::endl;
+    //std::cout << "params.m = "<< params.m << std::endl;
+    //std::cout << "params.G = "<< params.G << std::endl;
+    //std::cout << "params.B = "<< params.B << std::endl;
     F_bodyF = bodyF_R_earthF * F_earthF;
 
     Eigen::Vector3d M_earthF; // moments with respect to earth frame
@@ -222,7 +229,7 @@ Eigen::Vector6d Underwater_Vehicle::getg(const Eigen::Vector6d &eta)
     g.segment(0,3) = F_bodyF;
     g.segment(3,3) = M_bodyF;
 
-    std::cout << "g = "<< g<< std::endl;
+    //std::cout << "g = "<< g<< std::endl;
 
     return g;
 }
@@ -237,6 +244,7 @@ void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel,const E
     T.row(5) = params.T_vector.segment(30,6);
 
     M = getM();
+    Minv = getInvM();
     C = getC(v_rel);
     D = getD(v_rel);
     g = getg(eta);

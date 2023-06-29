@@ -101,6 +101,7 @@ class Underwater_Vehicle {
     //bool LoadConfiguration(const libconfig::Config& confObj);
     Eigen::Matrix6d M_a; // added mass Matrix
     Eigen::Matrix6d M; // entire mass matrix
+    Eigen::Matrix6d Minv; // inverse mass matrix
     Eigen::Matrix6d K; // thrust coefficient
     Eigen::Matrix6d T; // thrust configuration matrix
     Eigen::Matrix6d C; // entire coriolis matrix
@@ -124,6 +125,7 @@ public:
     void ThrustersSaturation(double lThruster, double rThruster, double thMin, double thMax, double& lSatOut, double& rSatOut);
     //void ThrusterDynamicAllocator(const double f_des, const double n_des, double& h_s, double &h_p);
     Eigen::Matrix6d getM();
+    Eigen::Matrix6d getInvM();
     Eigen::Matrix6d getC(const Eigen::Vector6d &v_ref);
     Eigen::Matrix6d getD(const Eigen::Vector6d &v_rel);
     Eigen::Vector6d getg(const Eigen::Vector6d &eta);
