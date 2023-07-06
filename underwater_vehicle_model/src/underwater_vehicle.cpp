@@ -16,10 +16,15 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt, const Eigen
 
     UpdateMatrices(linAngVel_, eta);
 
-    linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ - g);
-    //std::cout << "linAngAcc_ = "<< linAngAcc_ << std::endl;
-    //std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
-    //std::cout << "F_voltage = "<< F << std::endl;
+    //linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ - g);
+    linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ + g);
+    std::cout << "linAngAcc_ = "<< linAngAcc_ << std::endl;
+    std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
+    std::cout << "F_voltage = "<< F << std::endl;
+    std::cout << "T * K * F = "<< T * K * F<< std::endl;
+    std::cout << "C = "<< C << std::endl;
+    std::cout << "D = "<< D << std::endl;
+    std::cout << "g = "<< g << std::endl;
 
     //std::cout << "K = "<< K << std::endl;
     //std::cout << "T = "<< T << std::endl;
@@ -29,7 +34,7 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt, const Eigen
     //tem = T * K ;
     //std::cout << "tem = "<< tem<< std::endl;
 
-    //std::cout << "tem * F = "<< tem * F<< std::endl;
+
 
     std::cout << std::endl;
 }
