@@ -6,7 +6,7 @@
 #include "libconfig.h++"
 #include "rml/RML.h"
 
-struct UlisseModelParameters {
+struct SurfaceVehicleModelParameters {
 
     double lambda_pos, lambda_neg;
     double d; // transversal distance from main axis to the motors
@@ -23,7 +23,7 @@ struct UlisseModelParameters {
     double rpmDynNegPerc;
     Eigen::Matrix3d Inertia;
 
-    UlisseModelParameters()
+    SurfaceVehicleModelParameters()
         : lambda_pos(0.0)
         , lambda_neg(0.0)
         , d(0.0)
@@ -46,7 +46,7 @@ struct UlisseModelParameters {
         Inertia.setZero();
     }
 
-    friend std::ostream& operator<<(std::ostream& os, UlisseModelParameters const& a)
+    friend std::ostream& operator<<(std::ostream& os, SurfaceVehicleModelParameters const& a)
     {
         Eigen::IOFormat TabbedCleanFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " ", "\t", "\n", "", "");
         return os << "Ulisse Model Params:\n"
@@ -198,7 +198,7 @@ class SurfaceVehicleModel {
     void InverseMotorEquation(const Eigen::Vector6d& linAngVel, double thrust_force, double& thruster_perc);
 
 public:
-    UlisseModelParameters params;
+    SurfaceVehicleModelParameters params;
     SurfaceVehicleModel();
     Eigen::Vector3d ComputeCoriolisAndDragForces(Eigen::Vector6d vel);
     double GetThrusterForce(double n, double linXVel);
