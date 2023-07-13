@@ -7,9 +7,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
-endif()
+#if(NOT CMAKE_BUILD_TYPE)
+#    set(CMAKE_BUILD_TYPE Debug)
+#endif()
 
 
 find_package(catkin REQUIRED COMPONENTS
@@ -38,9 +38,9 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_library(surface_vehicle_model_lib src/surfacevehiclemodel.cpp)
-add_dependencies(${PROJECT_NAME}_lib ${catkin_EXPORTED_TARGETS})
-target_link_libraries(surface_vehicle_model_lib ${catkin_LIBRARIES} rml)
+add_library(${PROJECT_NAME} src/surfacevehiclemodel.cpp)
+add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} rml)
 
 ## Mark executables for installation
 #install(TARGETS ${PROJECT_NAME}_node
@@ -55,13 +55,13 @@ target_link_libraries(surface_vehicle_model_lib ${catkin_LIBRARIES} rml)
 # )
 
 ## Mark cpp header files for installation
-install(DIRECTORY include/${PROJECT_NAME}/
-    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-    FILES_MATCHING
-    PATTERN "*.h"
-    PATTERN "*.hpp"
-    PATTERN ".svn" EXCLUDE
-    )
+#install(DIRECTORY include/${PROJECT_NAME}/
+#    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#    FILES_MATCHING
+#    PATTERN "*.h"
+#    PATTERN "*.hpp"
+#    PATTERN ".svn" EXCLUDE
+#    )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 #install(FILES
