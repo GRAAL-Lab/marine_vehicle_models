@@ -102,7 +102,10 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
     Eigen::Vector3d delta_x = delta_worldF * (1 -  length / delta_worldF.norm()); // the difference between the distance and the length of cable
     if (delta_worldF.norm() >= length){
         worldF_F = - k * delta_x;
+        //worldF_F.x() = - worldF_F.x();
+        //worldF_F.y() = - worldF_F.y();
         bodyF_F = bodyF_R_worldF * worldF_F;
+        //bodyF_F.x() = bodyF_F.x();
         Eigen::Vector3d r;
         //bodyF_M = bodyF_F.cross(Cable_params.AttachPoint);
         bodyF_M = Cable_params.AttachPoint.cross(bodyF_F);
