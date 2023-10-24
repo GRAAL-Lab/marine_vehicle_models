@@ -16,15 +16,16 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt_bodyF, const
     //F_cable = ComputeCableForce();
     //Eigen::Vector6d F_cable; F_cable.setZero();
     //F.setOnes();
-    Eigen::RotationMatrix bodyF_R_worldF = worldF_R_bodyF.transpose();
+    //Eigen::RotationMatrix bodyF_R_worldF = worldF_R_bodyF.transpose();
 
-    UpdateMatrices(linAngVel_, bodyF_R_worldF);
+    UpdateMatrices(linAngVel_, worldF_R_bodyF);
 
     //linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ - g);
     //linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ + g); correct one
     linAngAcc_ = Minv * (T * K * F_thruster - (C + D)*linAngVel_ + g_bodyF + Fcable_bodyF);
     //std::cout << "linAngAcc_ = "<< linAngAcc_ << std::endl;
-    //std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
+    std::cout << "Fcable_bodyF = "<< Fcable_bodyF << std::endl;
+    std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
     //std::cout << "F_voltage = "<< F_thruster << std::endl;
     //std::cout << "T * K * F = "<< T * K * F_thruster<< std::endl;
     //std::cout << "C = "<< C << std::endl;
@@ -89,6 +90,7 @@ Eigen::Vector6d Underwater_Vehicle::VoltageToForces(const Eigen::Vector6d& volt)
     return F;
 }
 
+/*
 Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF,
                                                         const float &length, const Eigen::RotationMatrix &bodyF_R_worldF){
 
@@ -112,12 +114,59 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
         bodyF_FandM << bodyF_F, bodyF_M;
     }
     else
+    {
         bodyF_FandM.setZero();
+        worldF_FandM.setZero();
+    }
     worldF_M = bodyF_R_worldF.transpose() * bodyF_M;
     worldF_FandM << worldF_F, worldF_M;
 
     std::cout << "F_cable_bodyF = "<< bodyF_FandM << std::endl;
     std::cout << "F_cable_worldF = "<< worldF_FandM << std::endl;
+
+    return bodyF_FandM;
+} */
+
+Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF,
+                                                        const float &length, const Eigen::RotationMatrix &worldF_R_bodyF){
+
+    //float k = Cable_params.stiffness;
+    Eigen::Vector3d worldF_F, bodyF_F;
+    Eigen::Vector3d worldF_M, bodyF_M;
+    Eigen::Vector6d worldF_FandM, bodyF_FandM;
+    Eigen::Vector3d delta_worldF = e_pos_worldF - s_pos_worldF; // the distance between the ends of cable
+    Eigen::RotationMatrix bodyF_R_worldF = worldF_R_bodyF.transpose();
+
+    std::cout << "delta_worldF = "<< delta_worldF << std::endl;
+    std::cout << "delta_worldF.norm = "<< delta_worldF.norm() << std::endl;
+
+
+    //double length = GetCableCurrentLength();
+    //Eigen::Vector3d delta_x = delta_worldF * (1 -  length / delta_worldF.norm()); // the difference between the distance and the length of cable
+    if (delta_worldF.norm() >= length){
+        std::cout << "cableLength = "<< length << std::endl;
+        Eigen::Vector3d v_cable = delta_worldF/delta_worldF.norm(); // positive direction towards z+
+        std::cout << "v_cable = "<< v_cable << std::endl;
+        double cos_teta = v_cable.dot(Eigen::Vector3d::UnitZ());
+        std::cout << "cos_teta = "<< cos_teta << std::endl;
+
+        worldF_F = - params.m * params.G * cos_teta * v_cable;
+        //worldF_F.x() = - worldF_F.x();
+        //worldF_F.y() = - worldF_F.y();
+        bodyF_F = bodyF_R_worldF * worldF_F;
+        //bodyF_F.y() = - bodyF_F.y();
+        bodyF_M = Cable_params.AttachPoint.cross(bodyF_F);
+        bodyF_FandM << bodyF_F, bodyF_M;
+        worldF_M = bodyF_R_worldF.transpose() * bodyF_M;
+        worldF_FandM << worldF_F, worldF_M;
+        std::cout << "F_cable_bodyF = "<< bodyF_FandM << std::endl;
+        std::cout << "F_cable_worldF = "<< worldF_FandM << std::endl;
+    }
+    else
+    {
+        bodyF_FandM.setZero();
+        worldF_FandM.setZero();
+    }
 
     return bodyF_FandM;
 }
@@ -226,7 +275,7 @@ Eigen::Matrix6d Underwater_Vehicle::getD(const Eigen::Vector6d &v_rel)
     return D;
 }
 
-Eigen::Vector6d Underwater_Vehicle::getg_bodyF(const Eigen::RotationMatrix& bodyF_R_worldF)
+Eigen::Vector6d Underwater_Vehicle::getg_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF)
 {
     //Eigen::Vector6d g_bodyF;
     g_bodyF.setZero();
@@ -255,6 +304,7 @@ Eigen::Vector6d Underwater_Vehicle::getg_bodyF(const Eigen::RotationMatrix& body
     //std::cout << "params.m = "<< params.m << std::endl;
     //std::cout << "params.G = "<< params.G << std::endl;
     //std::cout << "params.B = "<< params.B << std::endl;
+    Eigen::RotationMatrix bodyF_R_worldF = worldF_R_bodyF.transpose();
     bodyF_F = bodyF_R_worldF * worldF_F;
 
     Eigen::Vector3d worldF_M; // moments with respect to earth frame
@@ -287,7 +337,7 @@ void Underwater_Vehicle::SetCableLength(const double &l){
         cable_length =l;
 }
 
-void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& bodyF_R_worldF){
+void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
     K = params.K_diag.asDiagonal();
     T.row(0) = params.T_vector.segment(0,6);
     T.row(1) = params.T_vector.segment(6,6);
@@ -300,15 +350,15 @@ void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const 
     Minv = getInvM();
     C = getC(v_rel);
     D = getD(v_rel);
-    g_bodyF = getg_bodyF(bodyF_R_worldF);
+    g_bodyF = getg_bodyF(worldF_R_bodyF);
 
     Cable_params.AttachPoint = {-params.L / 2, 0.0, 0.0};
 }
 
-void Underwater_Vehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& bodyF_R_worldF){
+void Underwater_Vehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
     C = getC(v_rel);
     D = getD(v_rel);
-    g_bodyF = getg_bodyF(bodyF_R_worldF);
+    g_bodyF = getg_bodyF(worldF_R_bodyF);
 }
 
 

@@ -182,13 +182,13 @@ public:
     Eigen::Matrix6d getInvM();
     Eigen::Matrix6d getC(const Eigen::Vector6d &v_ref);
     Eigen::Matrix6d getD(const Eigen::Vector6d &v_rel);
-    Eigen::Vector6d getg_bodyF(const Eigen::RotationMatrix& bodyF_R_worldF);
+    Eigen::Vector6d getg_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF);
     //void UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::Vector6d &eta);
-    void UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& bodyF_R_worldF);
-    void InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& bodyF_R_worldF);
+    void UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF);
+    void InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF);
     Eigen::Vector6d VoltageToForces(const Eigen::Vector6d& volt);
 
-    Eigen::Vector6d ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF, const float &length, const Eigen::RotationMatrix &bodyF_R_worldF);
+    Eigen::Vector6d ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF, const float &length, const Eigen::RotationMatrix &worldF_R_bodyF);
     //double GetCablePos_starting();
     //double GetCablePos_ending();
     float GetCableCurrentLength();
