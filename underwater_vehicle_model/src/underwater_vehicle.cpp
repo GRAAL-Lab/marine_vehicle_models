@@ -1,5 +1,6 @@
 #include "underwater_vehicle_model/underwater_vehicle.hpp"
 #include "rml/RML.h"
+#include <cmath>
 
 Underwater_Vehicle::Underwater_Vehicle() { }
 //void print_matrix(const Eigen::MatrixXd& mat){
@@ -127,6 +128,7 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
     return bodyF_FandM;
 } */
 
+/* the previous on
 Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF,
                                                         const float &length, const Eigen::RotationMatrix &worldF_R_bodyF){
 
@@ -158,6 +160,75 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
         bodyF_M = Cable_params.AttachPoint.cross(bodyF_F);
         bodyF_FandM << bodyF_F, bodyF_M;
         worldF_M = bodyF_R_worldF.transpose() * bodyF_M;
+        worldF_FandM << worldF_F, worldF_M;
+        std::cout << "F_cable_bodyF = "<< bodyF_FandM << std::endl;
+        std::cout << "F_cable_worldF = "<< worldF_FandM << std::endl;
+    }
+    else
+    {
+        bodyF_FandM.setZero();
+        worldF_FandM.setZero();
+    }
+
+    return bodyF_FandM;
+}
+*/
+
+Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF,
+                                                        const float &length, const Eigen::RotationMatrix &worldF_R_bodyF, const Eigen::Vector6d& linAngVel_){
+
+    //float k = Cable_params.stiffness;
+    Eigen::Vector3d worldF_F, bodyF_F;
+    Eigen::Vector3d worldF_M, bodyF_M;
+    Eigen::Vector6d worldF_FandM, bodyF_FandM;
+    Eigen::Vector3d delta_worldF = e_pos_worldF - s_pos_worldF; // the distance between the ends of cable
+    Eigen::RotationMatrix bodyF_R_worldF = worldF_R_bodyF.transpose();
+
+    std::cout << "delta_worldF = "<< delta_worldF << std::endl;
+    std::cout << "delta_worldF.norm = "<< delta_worldF.norm() << std::endl;
+
+
+    //double length = GetCableCurrentLength();
+    //Eigen::Vector3d delta_x = delta_worldF * (1 -  length / delta_worldF.norm()); // the difference between the distance and the length of cable
+    if (delta_worldF.norm() >= length - 0.5){
+        std::cout << "cableLength = "<< length << std::endl;
+        Eigen::Vector3d v_cable = delta_worldF/delta_worldF.norm(); // unit vector, direction towards z+
+        std::cout << "v_cable = " << v_cable << std::endl;
+
+        //double cos_teta = v_cable.dot(Eigen::Vector3d::UnitZ());
+        //std::cout << "cos_teta = "<< cos_teta << std::endl;
+
+        // Compute the projection of every force on cable vector
+        // Check if the projection is positive otherwise it is not considered in cable force
+        double Ftot = 0.0;
+        double F;
+        Eigen::Vector6d FM_th = T * K * F_thruster;
+        Eigen::Vector3d F_th = worldF_R_bodyF * FM_th.head(3);
+        F = F_th.dot(v_cable); if(F > 0) Ftot = Ftot + F;
+        std::cout << "F-thrus = "<< F << std::endl;
+
+        Eigen::Vector3d F_g = worldF_R_bodyF * g_bodyF.head(3);
+        F = F_g.dot(v_cable); if(F > 0) Ftot = Ftot + F;
+        std::cout << "F-g = "<< F << std::endl;
+
+        Eigen::Vector6d FM_cd = - (C + D) * linAngVel_;
+        Eigen::Vector3d F_cd =  worldF_R_bodyF * FM_cd.head(3);
+        F = F_cd.dot(v_cable); if(F > 0) Ftot = Ftot + F;
+        std::cout << "F-cd = "<< F << std::endl;
+
+        double q;
+        double r = delta_worldF.norm() - length;
+        if(r < 0) q = pow(2*r + 1,2)*(1 - 4*r);
+        else q = 1;
+
+        worldF_F = - q * Ftot * v_cable;
+        //worldF_F.x() = - worldF_F.x();
+        //worldF_F.y() = - worldF_F.y();
+        bodyF_F = bodyF_R_worldF * worldF_F;
+        //bodyF_F.y() = - bodyF_F.y();
+        bodyF_M = Cable_params.AttachPoint.cross(bodyF_F);
+        bodyF_FandM << bodyF_F, bodyF_M;
+        worldF_M = worldF_R_bodyF * bodyF_M;
         worldF_FandM << worldF_F, worldF_M;
         std::cout << "F_cable_bodyF = "<< bodyF_FandM << std::endl;
         std::cout << "F_cable_worldF = "<< worldF_FandM << std::endl;

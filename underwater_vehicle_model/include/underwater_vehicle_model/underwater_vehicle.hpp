@@ -188,7 +188,7 @@ public:
     void InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF);
     Eigen::Vector6d VoltageToForces(const Eigen::Vector6d& volt);
 
-    Eigen::Vector6d ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF, const float &length, const Eigen::RotationMatrix &worldF_R_bodyF);
+    Eigen::Vector6d ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF, const float &length, const Eigen::RotationMatrix &worldF_R_bodyF, const Eigen::Vector6d& linAngVel_);
     //double GetCablePos_starting();
     //double GetCablePos_ending();
     float GetCableCurrentLength();
