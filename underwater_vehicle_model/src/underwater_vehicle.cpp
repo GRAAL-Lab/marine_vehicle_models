@@ -9,11 +9,11 @@ Underwater_Vehicle::Underwater_Vehicle() { }
 //    for()
 //}
 
-void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& Fcable_bodyF,
+void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& bodyF_F_cable,
                                         const Eigen::RotationMatrix& worldF_R_bodyF, const Eigen::Vector6d& linAngVel_,  Eigen::Vector6d& linAngAcc_)
 {
-
-    F_thruster = VoltageToForces(volt_bodyF);
+    Eigen::Vector6d F_th;
+    F_th = VoltageToForces(volt_bodyF);
     //F_cable = ComputeCableForce();
     //Eigen::Vector6d F_cable; F_cable.setZero();
     //F.setOnes();
@@ -23,15 +23,17 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt_bodyF, const
 
     //linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ - g);
     //linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ + g); correct one
-    linAngAcc_ = Minv * (T * K * F_thruster - (C + D)*linAngVel_ + g_bodyF + Fcable_bodyF);
+    linAngAcc_ = Minv * (T * K * F_th - (C + D)*linAngVel_ + bodyF_g + bodyF_F_cable);
+    bodyF_F_coriolis_drag = - (C + D)*linAngVel_;
+    body_F_thruster = T * K * F_th;
     //std::cout << "linAngAcc_ = "<< linAngAcc_ << std::endl;
-    std::cout << "Fcable_bodyF = "<< Fcable_bodyF << std::endl;
-    std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
-    //std::cout << "F_voltage = "<< F_thruster << std::endl;
-    //std::cout << "T * K * F = "<< T * K * F_thruster<< std::endl;
+    //std::cout << "bodyF_F_cable = "<< bodyF_F_cable << std::endl;
+    //std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
+    //std::cout << "F_voltage = "<< body_F_thruster << std::endl;
+    //std::cout << "T * K * F = "<< T * K * body_F_thruster<< std::endl;
     //std::cout << "C = "<< C << std::endl;
     //std::cout << "D = "<< D << std::endl;
-    std::cout << "g = "<< g_bodyF << std::endl;
+    //std::cout << "g = "<< bodyF_g << std::endl;
 
     //std::cout << "K = "<< K << std::endl;
     //std::cout << "T = "<< T << std::endl;
@@ -43,7 +45,7 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt_bodyF, const
 
 
 
-    std::cout << std::endl;
+    //std::cout << std::endl;
 }
 
 
@@ -184,8 +186,8 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
     Eigen::Vector3d delta_worldF = e_pos_worldF - s_pos_worldF; // the distance between the ends of cable
     Eigen::RotationMatrix bodyF_R_worldF = worldF_R_bodyF.transpose();
 
-    std::cout << "delta_worldF = "<< delta_worldF << std::endl;
-    std::cout << "delta_worldF.norm = "<< delta_worldF.norm() << std::endl;
+    //std::cout << "delta_worldF = "<< delta_worldF << std::endl;
+    //std::cout << "delta_worldF.norm = "<< delta_worldF.norm() << std::endl;
 
 
     //double length = GetCableCurrentLength();
@@ -193,7 +195,7 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
     if (delta_worldF.norm() >= length - 0.5){
         std::cout << "cableLength = "<< length << std::endl;
         Eigen::Vector3d v_cable = delta_worldF/delta_worldF.norm(); // unit vector, direction towards z+
-        std::cout << "v_cable = " << v_cable << std::endl;
+        //std::cout << "v_cable = " << v_cable << std::endl;
 
         //double cos_teta = v_cable.dot(Eigen::Vector3d::UnitZ());
         //std::cout << "cos_teta = "<< cos_teta << std::endl;
@@ -202,19 +204,19 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
         // Check if the projection is positive otherwise it is not considered in cable force
         double Ftot = 0.0;
         double F;
-        Eigen::Vector6d FM_th = T * K * F_thruster;
+        Eigen::Vector6d FM_th = body_F_thruster;
         Eigen::Vector3d F_th = worldF_R_bodyF * FM_th.head(3);
         F = F_th.dot(v_cable); if(F > 0) Ftot = Ftot + F;
-        std::cout << "F-thrus = "<< F << std::endl;
+        //std::cout << "F-thrus = "<< F << std::endl;
 
-        Eigen::Vector3d F_g = worldF_R_bodyF * g_bodyF.head(3);
+        Eigen::Vector3d F_g = worldF_R_bodyF * bodyF_g.head(3);
         F = F_g.dot(v_cable); if(F > 0) Ftot = Ftot + F;
-        std::cout << "F-g = "<< F << std::endl;
+        //std::cout << "F-g = "<< F << std::endl;
 
         Eigen::Vector6d FM_cd = - (C + D) * linAngVel_;
         Eigen::Vector3d F_cd =  worldF_R_bodyF * FM_cd.head(3);
         F = F_cd.dot(v_cable); if(F > 0) Ftot = Ftot + F;
-        std::cout << "F-cd = "<< F << std::endl;
+        //std::cout << "F-cd = "<< F << std::endl;
 
         double q;
         double r = delta_worldF.norm() - length;
@@ -230,15 +232,15 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
         bodyF_FandM << bodyF_F, bodyF_M;
         worldF_M = worldF_R_bodyF * bodyF_M;
         worldF_FandM << worldF_F, worldF_M;
-        std::cout << "F_cable_bodyF = "<< bodyF_FandM << std::endl;
-        std::cout << "F_cable_worldF = "<< worldF_FandM << std::endl;
+        //std::cout << "F_cable_bodyF = "<< bodyF_FandM << std::endl;
+        //std::cout << "F_cable_worldF = "<< worldF_FandM << std::endl;
     }
     else
     {
         bodyF_FandM.setZero();
         worldF_FandM.setZero();
     }
-
+    bodyF_F_cable = bodyF_FandM;
     return bodyF_FandM;
 }
 
@@ -346,10 +348,10 @@ Eigen::Matrix6d Underwater_Vehicle::getD(const Eigen::Vector6d &v_rel)
     return D;
 }
 
-Eigen::Vector6d Underwater_Vehicle::getg_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF)
+Eigen::Vector6d Underwater_Vehicle::ComputeG_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF)
 {
     //Eigen::Vector6d g_bodyF;
-    g_bodyF.setZero();
+    bodyF_g.setZero();
 
     //float delta = m/rho;
     //float boyancy = delta * rho;
@@ -391,12 +393,12 @@ Eigen::Vector6d Underwater_Vehicle::getg_bodyF(const Eigen::RotationMatrix& worl
     g.segment(3,3) = -((m * G - B) * rml::Vect3ToSkew(CG) + m * G * rml::Vect3ToSkew(C_GB)) * k0;
     //std::cout << "g: " << g << std::endl; */////////////
 
-    g_bodyF.segment(0,3) = bodyF_F;
-    g_bodyF.segment(3,3) = bodyF_M;
+    bodyF_g.segment(0,3) = bodyF_F;
+    bodyF_g.segment(3,3) = bodyF_M;
 
     //std::cout << "g = "<< g<< std::endl;
 
-    return g_bodyF;
+    return bodyF_g;
 }
 
 float Underwater_Vehicle::GetCableCurrentLength(){
@@ -421,7 +423,7 @@ void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const 
     Minv = getInvM();
     C = getC(v_rel);
     D = getD(v_rel);
-    g_bodyF = getg_bodyF(worldF_R_bodyF);
+    bodyF_g = ComputeG_bodyF(worldF_R_bodyF);
 
     Cable_params.AttachPoint = {-params.L / 2, 0.0, 0.0};
 }
@@ -429,7 +431,23 @@ void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const 
 void Underwater_Vehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
     C = getC(v_rel);
     D = getD(v_rel);
-    g_bodyF = getg_bodyF(worldF_R_bodyF);
+    bodyF_g = ComputeG_bodyF(worldF_R_bodyF);
+}
+
+Eigen::Vector6d Underwater_Vehicle::getg_bodyF(){
+    return bodyF_g;
+}
+
+Eigen::Vector6d Underwater_Vehicle::getFcable_bodyF(){
+    return bodyF_F_cable;
+}
+
+Eigen::Vector6d Underwater_Vehicle::getFthruster_bodyF(){
+    return body_F_thruster;
+}
+
+Eigen::Vector6d Underwater_Vehicle::getCoriolisAndDrag_bodyF(){
+    return bodyF_F_coriolis_drag;
 }
 
 

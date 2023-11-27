@@ -152,9 +152,10 @@ class Underwater_Vehicle {
     Eigen::Matrix6d T; // thrust configuration matrix
     Eigen::Matrix6d C; // entire coriolis matrix
     Eigen::Matrix6d D; // entire damping matrix
-    Eigen::Vector6d g_bodyF; // restoring force
-    Eigen::Vector6d F_thruster; // thruster forces
-    Eigen::Vector6d F_cable; // cable forces
+    Eigen::Vector6d bodyF_F_coriolis_drag; // restoring force
+    Eigen::Vector6d bodyF_g; // restoring force
+    Eigen::Vector6d body_F_thruster; // thruster forces
+    Eigen::Vector6d bodyF_F_cable; // cable forces
     Eigen::Vector6d u_motor; // motor commands
     Eigen::Matrix3d I0; // motor commands
 
@@ -171,8 +172,8 @@ public:
     double GetThrusterForce(double n, double linXVel);
     double PercentageToRPM(double h);
     double RPMToPercentage(double n);
-    //void DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& Fcable_bodyF, const Eigen::Vector6d& eta, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
-    void DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& Fcable_bodyF,
+    //void DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& bodyF_F_cable, const Eigen::Vector6d& eta, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
+    void DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& bodyF_F_cable,
                         const Eigen::RotationMatrix& worldF_R_bodyF, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
     Eigen::Vector2d ThusterAllocation(Eigen::Vector2d& tau);
     void InverseMotorsEquations(const Eigen::Vector6d& linAngVel, Eigen::Vector2d thrust_force, double& h_p, double& h_s);
@@ -182,7 +183,13 @@ public:
     Eigen::Matrix6d getInvM();
     Eigen::Matrix6d getC(const Eigen::Vector6d &v_ref);
     Eigen::Matrix6d getD(const Eigen::Vector6d &v_rel);
-    Eigen::Vector6d getg_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF);
+    Eigen::Vector6d ComputeG_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF);
+
+    Eigen::Vector6d getCoriolisAndDrag_bodyF();
+    Eigen::Vector6d getg_bodyF();
+    Eigen::Vector6d getFcable_bodyF();
+    Eigen::Vector6d getFthruster_bodyF();
+
     //void UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::Vector6d &eta);
     void UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF);
     void InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF);
