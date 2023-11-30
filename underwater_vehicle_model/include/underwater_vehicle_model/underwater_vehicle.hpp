@@ -17,6 +17,7 @@ struct UnderwaterModelParameters{
     Eigen::Vector6d M_a_diag;
     Eigen::Vector6d D_diag;
     Eigen::Vector6d K_diag;
+    Eigen::Vector6d Q_diag;
     Eigen::Vector3d CG; // Center of Gravity
     Eigen::Vector3d CB; // Center of Boyancy
     Eigen::Vector3d Ixyz; // Ix, Iy and Iz
@@ -79,6 +80,8 @@ struct UnderwaterModelParameters{
         if (!ctb::GetParamVector(blueROVmodel, D_diag, "D_diag"))
             return false;
         if (!ctb::GetParamVector(blueROVmodel, K_diag, "K_diag"))
+            return false;
+        if (!ctb::GetParamVector(blueROVmodel, Q_diag, "K_diag"))
             return false;
         if (!ctb::GetParamVector(blueROVmodel, CG, "CG"))
             return false;
@@ -149,6 +152,7 @@ class Underwater_Vehicle {
     Eigen::Matrix6d M; // entire mass matrix
     Eigen::Matrix6d Minv; // inverse mass matrix
     Eigen::Matrix6d K; // thrust coefficient
+    Eigen::Matrix6d Q; // thrust coefficient weight
     Eigen::Matrix6d T; // thrust configuration matrix
     Eigen::Matrix6d C; // entire coriolis matrix
     Eigen::Matrix6d D; // entire damping matrix
@@ -173,18 +177,21 @@ public:
     double PercentageToRPM(double h);
     double RPMToPercentage(double n);
     //void DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& bodyF_F_cable, const Eigen::Vector6d& eta, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
-    void DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& bodyF_F_cable,
+    void DirectDynamics(const Eigen::Vector6d& volt, const Eigen::Vector6d& bodyF_F_cable,
                         const Eigen::RotationMatrix& worldF_R_bodyF, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
     Eigen::Vector2d ThusterAllocation(Eigen::Vector2d& tau);
     void InverseMotorsEquations(const Eigen::Vector6d& linAngVel, Eigen::Vector2d thrust_force, double& h_p, double& h_s);
-    void ThrustersSaturation(double lThruster, double rThruster, double thMin, double thMax, double& lSatOut, double& rSatOut);
+    //void ThrustersSaturation(double lThruster, double rThruster, double thMin, double thMax, double& lSatOut, double& rSatOut);
     //void ThrusterDynamicAllocator(const double f_des, const double n_des, double& h_s, double &h_p);
     Eigen::Matrix6d getM();
     Eigen::Matrix6d getInvM();
     Eigen::Matrix6d getC(const Eigen::Vector6d &v_ref);
     Eigen::Matrix6d getD(const Eigen::Vector6d &v_rel);
     Eigen::Vector6d ComputeG_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF);
-
+    void ThrustersSaturation(Eigen::Vector6d &thruster_force, const double& Saturation); // maybe we don't need it
+    Eigen::Vector6d ThusterAllocation(const Eigen::Vector6d& tau);
+    void Halt(Eigen::Vector6d &volt);
+    void Hold(Eigen::Vector6d &volt);
     Eigen::Vector6d getCoriolisAndDrag_bodyF();
     Eigen::Vector6d getg_bodyF();
     Eigen::Vector6d getFcable_bodyF();

@@ -9,11 +9,11 @@ Underwater_Vehicle::Underwater_Vehicle() { }
 //    for()
 //}
 
-void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& bodyF_F_cable,
+void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt, const Eigen::Vector6d& bodyF_F_cable,
                                         const Eigen::RotationMatrix& worldF_R_bodyF, const Eigen::Vector6d& linAngVel_,  Eigen::Vector6d& linAngAcc_)
 {
-    Eigen::Vector6d F_th;
-    F_th = VoltageToForces(volt_bodyF);
+    //Eigen::Vector6d applied_volt;
+    //F_th = VoltageToForces(volt);
     //F_cable = ComputeCableForce();
     //Eigen::Vector6d F_cable; F_cable.setZero();
     //F.setOnes();
@@ -23,9 +23,10 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt_bodyF, const
 
     //linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ - g);
     //linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ + g); correct one
-    linAngAcc_ = Minv * (T * K * F_th - (C + D)*linAngVel_ + bodyF_g + bodyF_F_cable);
+    //ThrustersSaturation(volt,1.0);
+    linAngAcc_ = Minv * (T * K * volt - (C + D)*linAngVel_ + bodyF_g + bodyF_F_cable);
     bodyF_F_coriolis_drag = - (C + D)*linAngVel_;
-    body_F_thruster = T * K * F_th;
+    body_F_thruster = T * K * volt;
     //std::cout << "linAngAcc_ = "<< linAngAcc_ << std::endl;
     //std::cout << "bodyF_F_cable = "<< bodyF_F_cable << std::endl;
     //std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
@@ -412,6 +413,7 @@ void Underwater_Vehicle::SetCableLength(const double &l){
 
 void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
     K = params.K_diag.asDiagonal();
+    Q = params.Q_diag.asDiagonal();
     T.row(0) = params.T_vector.segment(0,6);
     T.row(1) = params.T_vector.segment(6,6);
     T.row(2) = params.T_vector.segment(12,6);
@@ -432,6 +434,52 @@ void Underwater_Vehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eige
     C = getC(v_rel);
     D = getD(v_rel);
     bodyF_g = ComputeG_bodyF(worldF_R_bodyF);
+}
+
+Eigen::Vector6d Underwater_Vehicle::ThusterAllocation(const Eigen::Vector6d &tau){
+
+    Eigen::Matrix6d m = T*K;
+    //Eigen::MatrixXd m = Eigen::MatrixXd::Random(3,2);
+
+    std::cout << "Here is the matrix m:" << std::endl << m << std::endl;
+    //Eigen::JacobiSVD<Eigen::MatrixXf, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(m);
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd( m, Eigen::ComputeFullV | Eigen::ComputeFullU );
+    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
+    std::cout << "Its left singular vectors are the columns of the thin U matrix:" << std::endl << svd.matrixU() << std::endl;
+    std::cout << "Its right singular vectors are the columns of the thin V matrix:" << std::endl << svd.matrixV() << std::endl;
+    Eigen::Vector6d rhs; rhs = tau;
+    std::cout << "Now consider this rhs vector:" << std::endl << rhs << std::endl;
+    std::cout << "A least-squares solution of m*x = rhs is:" << std::endl << svd.solve(rhs) << std::endl;
+
+    //Eigen::Matrix6d P;
+    //P = Q.inverse() * T.transpose()*( T* Q.inverse() * T.transpose() ); // T#
+    //return K.inverse() * P * tau;  // u = K-1 * T# * tau
+    return svd.solve(rhs);
+}
+
+void Underwater_Vehicle::ThrustersSaturation(Eigen::Vector6d &thruster_force, const double& Saturation) // maybe we don't need it
+{
+    for (int i = 0 ;i < 6 ; i++){
+        if(thruster_force[i] > Saturation)
+            thruster_force[i] = Saturation;
+        else if(thruster_force[i] < -Saturation)
+            thruster_force[i] = -Saturation;
+    }
+
+}
+
+void Underwater_Vehicle::Halt(Eigen::Vector6d &volt){
+    volt.setZero();
+}
+
+void Underwater_Vehicle::Hold(Eigen::Vector6d &volt){
+    //volt.setZero();
+    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau_ref; tau_ref.setZero(); tau_ref[0] =2.0;
+    volt = ThusterAllocation(-tau + tau_ref);
+    std::cout << "volt = "<< volt << std::endl;
+    std::cout << "tau = "<< tau << std::endl;
+    std::cout << "T * K * volt = "<< T * K * volt << std::endl;
 }
 
 Eigen::Vector6d Underwater_Vehicle::getg_bodyF(){
