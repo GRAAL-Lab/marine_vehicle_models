@@ -192,6 +192,13 @@ public:
     Eigen::Vector6d ThusterAllocation(const Eigen::Vector6d& tau);
     void Halt(Eigen::Vector6d &volt);
     void Hold(Eigen::Vector6d &volt);
+    void moveUp(Eigen::Vector6d &volt);
+    void moveDown(Eigen::Vector6d &volt);
+    void moveLeft(Eigen::Vector6d &volt);
+    void moveRight(Eigen::Vector6d &volt);
+    void moveForward(Eigen::Vector6d &volt);
+    void moveBackward(Eigen::Vector6d &volt);
+
     Eigen::Vector6d getCoriolisAndDrag_bodyF();
     Eigen::Vector6d getg_bodyF();
     Eigen::Vector6d getFcable_bodyF();

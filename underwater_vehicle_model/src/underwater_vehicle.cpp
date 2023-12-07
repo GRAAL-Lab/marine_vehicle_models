@@ -194,7 +194,7 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
     //double length = GetCableCurrentLength();
     //Eigen::Vector3d delta_x = delta_worldF * (1 -  length / delta_worldF.norm()); // the difference between the distance and the length of cable
     if (delta_worldF.norm() >= length - 0.5){
-        std::cout << "cableLength = "<< length << std::endl;
+        //std::cout << "cableLength = "<< length << std::endl;
         Eigen::Vector3d v_cable = delta_worldF/delta_worldF.norm(); // unit vector, direction towards z+
         //std::cout << "v_cable = " << v_cable << std::endl;
 
@@ -221,7 +221,7 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
 
         double q;
         double r = delta_worldF.norm() - length;
-        if(r < 0) q = pow(2*r + 1,2)*(1 - 4*r);
+        if(r < 0) q = pow(2*r + 1, 2)*(1 - 4*r);
         else q = 1;
 
         worldF_F = - q * Ftot * v_cable;
@@ -441,15 +441,15 @@ Eigen::Vector6d Underwater_Vehicle::ThusterAllocation(const Eigen::Vector6d &tau
     Eigen::Matrix6d m = T*K;
     //Eigen::MatrixXd m = Eigen::MatrixXd::Random(3,2);
 
-    std::cout << "Here is the matrix m:" << std::endl << m << std::endl;
+    //std::cout << "Here is the matrix m:" << std::endl << m << std::endl;
     //Eigen::JacobiSVD<Eigen::MatrixXf, Eigen::ComputeThinU | Eigen::ComputeThinV> svd(m);
     Eigen::JacobiSVD<Eigen::MatrixXd> svd( m, Eigen::ComputeFullV | Eigen::ComputeFullU );
-    std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
-    std::cout << "Its left singular vectors are the columns of the thin U matrix:" << std::endl << svd.matrixU() << std::endl;
-    std::cout << "Its right singular vectors are the columns of the thin V matrix:" << std::endl << svd.matrixV() << std::endl;
+    //std::cout << "Its singular values are:" << std::endl << svd.singularValues() << std::endl;
+    //std::cout << "Its left singular vectors are the columns of the thin U matrix:" << std::endl << svd.matrixU() << std::endl;
+    //std::cout << "Its right singular vectors are the columns of the thin V matrix:" << std::endl << svd.matrixV() << std::endl;
     Eigen::Vector6d rhs; rhs = tau;
-    std::cout << "Now consider this rhs vector:" << std::endl << rhs << std::endl;
-    std::cout << "A least-squares solution of m*x = rhs is:" << std::endl << svd.solve(rhs) << std::endl;
+    //std::cout << "Now consider this rhs vector:" << std::endl << rhs << std::endl;
+    //std::cout << "A least-squares solution of m*x = rhs is:" << std::endl << svd.solve(rhs) << std::endl;
 
     //Eigen::Matrix6d P;
     //P = Q.inverse() * T.transpose()*( T* Q.inverse() * T.transpose() ); // T#
@@ -475,11 +475,54 @@ void Underwater_Vehicle::Halt(Eigen::Vector6d &volt){
 void Underwater_Vehicle::Hold(Eigen::Vector6d &volt){
     //volt.setZero();
     Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
-    Eigen::Vector6d tau_ref; tau_ref.setZero(); tau_ref[0] =2.0;
+    Eigen::Vector6d tau_ref; tau_ref.setZero();
+    //tau_ref[2] =0.7;
     volt = ThusterAllocation(-tau + tau_ref);
-    std::cout << "volt = "<< volt << std::endl;
-    std::cout << "tau = "<< tau << std::endl;
-    std::cout << "T * K * volt = "<< T * K * volt << std::endl;
+    //std::cout << "volt = "<< volt << std::endl;
+    //std::cout << "tau = "<< tau << std::endl;
+    //std::cout << "T * K * volt = "<< T * K * volt << std::endl;
+}
+
+void Underwater_Vehicle::moveUp(Eigen::Vector6d &volt){
+    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau_ref; tau_ref.setZero();
+    tau_ref[2] = -0.7;
+    volt = ThusterAllocation(-tau + tau_ref);
+}
+
+void Underwater_Vehicle::moveDown(Eigen::Vector6d &volt){
+    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau_ref; tau_ref.setZero();
+    tau_ref[2] = 0.7;
+    volt = ThusterAllocation(-tau + tau_ref);
+}
+
+void Underwater_Vehicle::moveForward(Eigen::Vector6d &volt){
+    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau_ref; tau_ref.setZero();
+    tau_ref[0] = 0.7;
+    volt = ThusterAllocation(-tau + tau_ref);
+}
+
+void Underwater_Vehicle::moveBackward(Eigen::Vector6d &volt){
+    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau_ref; tau_ref.setZero();
+    tau_ref[0] = -0.7;
+    volt = ThusterAllocation(-tau + tau_ref);
+}
+
+void Underwater_Vehicle::moveLeft(Eigen::Vector6d &volt){
+    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau_ref; tau_ref.setZero();
+    tau_ref[5] = -0.1;
+    volt = ThusterAllocation(-tau + tau_ref);
+}
+
+void Underwater_Vehicle::moveRight(Eigen::Vector6d &volt){
+    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau_ref; tau_ref.setZero();
+    tau_ref[5] = 0.1;
+    volt = ThusterAllocation(-tau + tau_ref);
 }
 
 Eigen::Vector6d Underwater_Vehicle::getg_bodyF(){
