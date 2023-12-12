@@ -205,18 +205,21 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
         // Check if the projection is positive otherwise it is not considered in cable force
         double Ftot = 0.0;
         double F;
-        Eigen::Vector6d FM_th = body_F_thruster;
-        Eigen::Vector3d F_th = worldF_R_bodyF * FM_th.head(3);
-        F = F_th.dot(v_cable); if(F > 0) Ftot = Ftot + F;
+        //Eigen::Vector6d FM_th = body_F_thruster; // Forces and Moments of thrusters in the body frame
+        Eigen::Vector3d F_th = worldF_R_bodyF * body_F_thruster.head(3); // Forces of thrusters in the world frame
+        F = F_th.dot(v_cable); // projection of thrusters forces on Cable vector
+        if(F > 0) Ftot = Ftot + F; // if the force is positive (pulling the cable) take the force into the consideration
         //std::cout << "F-thrus = "<< F << std::endl;
 
         Eigen::Vector3d F_g = worldF_R_bodyF * bodyF_g.head(3);
-        F = F_g.dot(v_cable); if(F > 0) Ftot = Ftot + F;
+        F = F_g.dot(v_cable);
+        if(F > 0) Ftot = Ftot + F;
         //std::cout << "F-g = "<< F << std::endl;
 
-        Eigen::Vector6d FM_cd = - (C + D) * linAngVel_;
-        Eigen::Vector3d F_cd =  worldF_R_bodyF * FM_cd.head(3);
-        F = F_cd.dot(v_cable); if(F > 0) Ftot = Ftot + F;
+        //Eigen::Vector6d FM_cd = - (C + D) * linAngVel_;
+        Eigen::Vector3d F_cd =  worldF_R_bodyF * bodyF_F_coriolis_drag.head(3);
+        F = F_cd.dot(v_cable);
+        if(F > 0) Ftot = Ftot + F;
         //std::cout << "F-cd = "<< F << std::endl;
 
         double q;
@@ -241,6 +244,7 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
         bodyF_FandM.setZero();
         worldF_FandM.setZero();
     }
+
     bodyF_F_cable = bodyF_FandM;
     return bodyF_FandM;
 }
@@ -474,7 +478,8 @@ void Underwater_Vehicle::Halt(Eigen::Vector6d &volt){
 
 void Underwater_Vehicle::Hold(Eigen::Vector6d &volt){
     //volt.setZero();
-    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    //Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     //tau_ref[2] =0.7;
     volt = ThusterAllocation(-tau + tau_ref);
@@ -484,42 +489,43 @@ void Underwater_Vehicle::Hold(Eigen::Vector6d &volt){
 }
 
 void Underwater_Vehicle::moveUp(Eigen::Vector6d &volt){
-    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
-    tau_ref[2] = -0.7;
+    tau_ref[2] = -10.0;
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
 void Underwater_Vehicle::moveDown(Eigen::Vector6d &volt){
-    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
-    tau_ref[2] = 0.7;
+    tau_ref[2] = 10.0;
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
 void Underwater_Vehicle::moveForward(Eigen::Vector6d &volt){
-    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    //Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
-    tau_ref[0] = 0.7;
+    tau_ref[0] = 10.0;
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
 void Underwater_Vehicle::moveBackward(Eigen::Vector6d &volt){
-    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
-    tau_ref[0] = -0.7;
+    tau_ref[0] = -10.0;
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
 void Underwater_Vehicle::moveLeft(Eigen::Vector6d &volt){
-    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[5] = -0.1;
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
 void Underwater_Vehicle::moveRight(Eigen::Vector6d &volt){
-    Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
+    Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[5] = 0.1;
     volt = ThusterAllocation(-tau + tau_ref);
