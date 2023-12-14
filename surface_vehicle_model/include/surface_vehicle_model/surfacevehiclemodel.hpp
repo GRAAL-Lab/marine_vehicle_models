@@ -50,7 +50,7 @@ struct SurfaceVehicleModelParameters {
     {
         Eigen::IOFormat TabbedCleanFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " ", "\t", "\n", "", "");
         return os << "Ulisse Model Params:\n"
-                  << "lambda_pos: " << static_cast<int>(a.lambda_pos) << "\n"
+                  << "lambda_pos: " << a.lambda_pos << "\n"
                   << "lambda_neg: " << a.lambda_neg << "\n"
                   << "motors transversal distance: " << a.d << "\n"
                   << "motors longitudinal distance: " << a.l << "\n"
