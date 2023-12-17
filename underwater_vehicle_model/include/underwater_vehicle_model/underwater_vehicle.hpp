@@ -53,6 +53,26 @@ struct UnderwaterModelParameters{
         //g.setZero();
     }
 
+    friend std::ostream& operator<<(std::ostream& os, UnderwaterModelParameters const& a)
+    {
+        Eigen::IOFormat TabbedCleanFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " ", "\t", "\n", "", "");
+        return os << "Underwater Model Params:\n"
+                  << "m: " << a.m << "\n"
+                  << "rho: " << a.rho << "\n"
+                  << "L: " << a.L << "\n"
+                  << "H: " << a.H << "\n"
+                  << "G: " << a.G << "\n"
+                  << "B: " << a.B << "\n"
+                  << "W: " << a.w << "\n"
+                  << "M_a_diag: " << a.M_a_diag << "\n"
+                  << "D_diag: " << a.D_diag << "\n"
+                  << "K_diag: " << a.K_diag << "\n"
+                  << "Q_diag: " << a.Q_diag << "\n"
+                  << "Center of Buoyancy: " << a.CB << "\n"
+                  << "Center of Gravity: " << a.CG << "\n"
+                  << "Ixyz: " << a.Ixyz << "\n";
+    }
+
     bool LoadConfiguration(const libconfig::Config& confObj) noexcept(false)
     {
         const libconfig::Setting& root = confObj.getRoot();
