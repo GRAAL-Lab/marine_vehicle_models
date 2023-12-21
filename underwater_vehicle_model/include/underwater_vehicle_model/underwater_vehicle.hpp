@@ -33,9 +33,10 @@ struct UnderwaterModelParameters{
         , rho(0.0)
         , L(0.0)
         , H(0.0)
+        , w(0.0)
         , G(0.0)
         , B(0.0)
-        , w(0.0)
+
     {
         //diagXYZKMN.setZero();
         //M_a_diag.setZero();
@@ -218,6 +219,7 @@ public:
     void moveRight(Eigen::Vector6d &volt);
     void moveForward(Eigen::Vector6d &volt);
     void moveBackward(Eigen::Vector6d &volt);
+    void MoveByForce(const Eigen::Vector6d &force, Eigen::Vector6d &volt);
 
     Eigen::Vector6d getCoriolisAndDrag_bodyF();
     Eigen::Vector6d getg_bodyF();
@@ -229,7 +231,7 @@ public:
     void InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF);
     Eigen::Vector6d VoltageToForces(const Eigen::Vector6d& volt);
 
-    Eigen::Vector6d ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF, const float &length, const Eigen::RotationMatrix &worldF_R_bodyF, const Eigen::Vector6d& linAngVel_);
+    Eigen::Vector6d ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF, const float &length, const Eigen::RotationMatrix &worldF_R_bodyF);
     //double GetCablePos_starting();
     //double GetCablePos_ending();
     float GetCableCurrentLength();
