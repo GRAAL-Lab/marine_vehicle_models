@@ -16,8 +16,8 @@ struct UnderwaterModelParameters{
     Eigen::Vector6d diagXYZKMN;
     Eigen::Vector6d M_a_diag;
     Eigen::Vector6d D_diag;
-    Eigen::Vector6d K_diag;
-    Eigen::Vector6d Q_diag;
+    Eigen::VectorXd K_diag;
+    Eigen::VectorXd Q_diag;
     Eigen::Vector3d CG; // Center of Gravity
     Eigen::Vector3d CB; // Center of Boyancy
     Eigen::Vector3d Ixyz; // Ix, Iy and Iz
@@ -172,9 +172,9 @@ class Underwater_Vehicle {
     Eigen::Matrix6d M_a; // added mass Matrix
     Eigen::Matrix6d M; // entire mass matrix
     Eigen::Matrix6d Minv; // inverse mass matrix
-    Eigen::Matrix6d K; // thrust coefficient
+    Eigen::MatrixXd K; // thrust coefficient
     Eigen::Matrix6d Q; // thrust coefficient weight
-    Eigen::Matrix6d T; // thrust configuration matrix
+    Eigen::MatrixXd T; // thrust configuration matrix
     Eigen::Matrix6d C; // entire coriolis matrix
     Eigen::Matrix6d D; // entire damping matrix
     Eigen::Vector6d bodyF_F_coriolis_drag; // restoring force
@@ -209,7 +209,7 @@ public:
     Eigen::Matrix6d getC(const Eigen::Vector6d &v_ref);
     Eigen::Matrix6d getD(const Eigen::Vector6d &v_rel);
     Eigen::Vector6d ComputeG_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF);
-    void ThrustersSaturation(Eigen::Vector6d &thruster_force, const double& Saturation); // maybe we don't need it
+    void ThrustersSaturation(Eigen::VectorXd &thruster_force, const double& Saturation); // maybe we don't need it
     Eigen::Vector6d ThusterAllocation(const Eigen::Vector6d& tau);
     void Halt(Eigen::Vector6d &volt);
     void Hold(Eigen::Vector6d &volt);

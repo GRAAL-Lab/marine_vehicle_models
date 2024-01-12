@@ -269,12 +269,28 @@ void Underwater_Vehicle::SetCableLength(const double &l){
 void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
     K = params.K_diag.asDiagonal();
     Q = params.Q_diag.asDiagonal();
-    T.row(0) = params.T_vector.segment(0,6);
-    T.row(1) = params.T_vector.segment(6,6);
-    T.row(2) = params.T_vector.segment(12,6);
-    T.row(3) = params.T_vector.segment(18,6);
-    T.row(4) = params.T_vector.segment(24,6);
-    T.row(5) = params.T_vector.segment(30,6);
+    if(params.T_vector.size() == 36){
+        T.row(0) = params.T_vector.segment(0,6);
+        T.row(1) = params.T_vector.segment(6,6);
+        T.row(2) = params.T_vector.segment(12,6);
+        T.row(3) = params.T_vector.segment(18,6);
+        T.row(4) = params.T_vector.segment(24,6);
+        T.row(5) = params.T_vector.segment(30,6);
+        if(K.size()!= 6) std::cout << "ERROR: K and T size are not compatible" << std::endl;
+    }
+    else if(params.T_vector.size() == 48){
+        T.row(0) = params.T_vector.segment(0,8);
+        T.row(1) = params.T_vector.segment(8,8);
+        T.row(2) = params.T_vector.segment(16,8);
+        T.row(3) = params.T_vector.segment(24,8);
+        T.row(4) = params.T_vector.segment(32,8);
+        T.row(5) = params.T_vector.segment(40,8);
+        if(K.size()!= 8) std::cout << "ERROR: K and T size are not compatible" << std::endl;
+    }
+    else{
+        T.setZero();
+        std::cout << "T thruseter allocation matrix is not correct (size)" << std::endl;
+    }
 
     M = getM();
     Minv = getInvM();
@@ -293,16 +309,16 @@ void Underwater_Vehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eige
 
 Eigen::Vector6d Underwater_Vehicle::ThusterAllocation(const Eigen::Vector6d &tau){
 
-    Eigen::Matrix6d m = T*K;
+    Eigen::MatrixXd m = T*K;
     Eigen::JacobiSVD<Eigen::MatrixXd> svd( m, Eigen::ComputeFullV | Eigen::ComputeFullU );
     //Eigen::Vector6d rhs; rhs = tau;
 
     return svd.solve(tau);
 }
 
-void Underwater_Vehicle::ThrustersSaturation(Eigen::Vector6d &thruster_force, const double& Saturation) // maybe we don't need it
+void Underwater_Vehicle::ThrustersSaturation(Eigen::VectorXd &thruster_force, const double& Saturation) // maybe we don't need it
 {
-    for (int i = 0 ;i < 6 ; i++){
+    for (int i = 0 ;i < thruster_force.size() ; i++){
         if(thruster_force[i] > Saturation)
             thruster_force[i] = Saturation;
         else if(thruster_force[i] < -Saturation)
