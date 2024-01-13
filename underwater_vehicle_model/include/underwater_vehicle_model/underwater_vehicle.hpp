@@ -7,6 +7,7 @@
 #include "rml/RML.h"
 
 struct UnderwaterModelParameters{
+    bool heavyConf; // ROV configuration (normal/heavy)
     float m; // mass of vehicle
     float rho; // water density
     float L; // Geometrical parameter
@@ -27,6 +28,10 @@ struct UnderwaterModelParameters{
 
     Eigen::VectorXd T_vector; // thruster allocation matrix written as a vector (to read it from conf file)
     std::vector<float> Tvec;
+
+    //Eigen::MatrixXd K; // thrust coefficient
+    //Eigen::MatrixXd Q; // thrust coefficient weight
+    //Eigen::MatrixXd T; // thrust configuration matrix
 
     UnderwaterModelParameters()
         : m(0.0)
@@ -58,6 +63,7 @@ struct UnderwaterModelParameters{
     {
         Eigen::IOFormat TabbedCleanFmt(Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " ", "\t", "\n", "", "");
         return os << "Underwater Model Params:\n"
+                  << "heavyMode: " << a.heavyConf << "\n"
                   << "m: " << a.m << "\n"
                   << "rho: " << a.rho << "\n"
                   << "L: " << a.L << "\n"
@@ -79,6 +85,8 @@ struct UnderwaterModelParameters{
         const libconfig::Setting& root = confObj.getRoot();
         const libconfig::Setting& blueROVmodel = root["blueROVmodel"];
 
+        if (!ctb::GetParam(blueROVmodel, heavyConf, "heavyConf"))
+            return false;
         if (!ctb::GetParam(blueROVmodel, m, "m"))
             return false;
         if (!ctb::GetParam(blueROVmodel, rho, "rho"))
@@ -102,7 +110,7 @@ struct UnderwaterModelParameters{
             return false;
         if (!ctb::GetParamVector(blueROVmodel, K_diag, "K_diag"))
             return false;
-        if (!ctb::GetParamVector(blueROVmodel, Q_diag, "K_diag"))
+        if (!ctb::GetParamVector(blueROVmodel, Q_diag, "Q_diag"))
             return false;
         if (!ctb::GetParamVector(blueROVmodel, CG, "CG"))
             return false;
@@ -173,7 +181,7 @@ class Underwater_Vehicle {
     Eigen::Matrix6d M; // entire mass matrix
     Eigen::Matrix6d Minv; // inverse mass matrix
     Eigen::MatrixXd K; // thrust coefficient
-    Eigen::Matrix6d Q; // thrust coefficient weight
+    Eigen::MatrixXd Q; // thrust coefficient weight
     Eigen::MatrixXd T; // thrust configuration matrix
     Eigen::Matrix6d C; // entire coriolis matrix
     Eigen::Matrix6d D; // entire damping matrix
@@ -198,7 +206,7 @@ public:
     double PercentageToRPM(double h);
     double RPMToPercentage(double n);
     //void DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& bodyF_F_cable, const Eigen::Vector6d& eta, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
-    void DirectDynamics(const Eigen::Vector6d& volt, const Eigen::Vector6d& bodyF_F_cable,
+    void DirectDynamics(const Eigen::VectorXd& volt, const Eigen::Vector6d& bodyF_F_cable,
                         const Eigen::RotationMatrix& worldF_R_bodyF, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
     Eigen::Vector2d ThusterAllocation(Eigen::Vector2d& tau);
     void InverseMotorsEquations(const Eigen::Vector6d& linAngVel, Eigen::Vector2d thrust_force, double& h_p, double& h_s);

@@ -2,9 +2,41 @@
 #include "rml/RML.h"
 #include <cmath>
 
-Underwater_Vehicle::Underwater_Vehicle() { }
+Underwater_Vehicle::Underwater_Vehicle() {
+    /*if(!params.heavyConf){
+        params.K_diag.conservativeResize(6,1);
+        params.Q_diag.conservativeResize(6,1);
+        K.resize(6,6);
+        K = params.K_diag.asDiagonal();
+        Q.resize(6,6);
+        Q = params.Q_diag.asDiagonal();
+        T.resize(6,6);
+        T.row(0) = params.T_vector.segment(0,6);
+        T.row(1) = params.T_vector.segment(6,6);
+        T.row(2) = params.T_vector.segment(12,6);
+        T.row(3) = params.T_vector.segment(18,6);
+        T.row(4) = params.T_vector.segment(24,6);
+        T.row(5) = params.T_vector.segment(30,6);
+    }
+    else{
+        params.K_diag.conservativeResize(8,1);
+        params.Q_diag.conservativeResize(8,1);
+        K.resize(8,8);
+        K = params.K_diag.asDiagonal();
+        Q.resize(8,8);
+        Q = params.Q_diag.asDiagonal();
+        T.resize(6,8);
+        T.row(0) = params.T_vector.segment(0,8);
+        T.row(1) = params.T_vector.segment(8,8);
+        T.row(2) = params.T_vector.segment(16,8);
+        T.row(3) = params.T_vector.segment(24,8);
+        T.row(4) = params.T_vector.segment(32,8);
+        T.row(5) = params.T_vector.segment(40,8);
+    }
+    //params.Kp = K;*/
+}
 
-void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt, const Eigen::Vector6d& bodyF_F_cable,
+void Underwater_Vehicle::DirectDynamics(const Eigen::VectorXd& volt, const Eigen::Vector6d& bodyF_F_cable,
                                         const Eigen::RotationMatrix& worldF_R_bodyF, const Eigen::Vector6d& linAngVel_,  Eigen::Vector6d& linAngAcc_)
 {
     //Eigen::Vector6d applied_volt;
@@ -22,6 +54,10 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::Vector6d& volt, const Eigen
     linAngAcc_ = Minv * (T * K * volt - (C + D)*linAngVel_ + bodyF_g + bodyF_F_cable);
     bodyF_F_coriolis_drag = - (C + D)*linAngVel_;
     body_F_thruster = T * K * volt;
+    //std::cout << "volt = "<< volt << std::endl;
+    //std::cout << "T = "<< T << std::endl;
+    //std::cout << "K = "<< K << std::endl;
+    //std::cout << "body_F_thruster = T * K * volt = "<< body_F_thruster << std::endl;
     //std::cout << "linAngAcc_ = "<< linAngAcc_ << std::endl;
     //std::cout << "bodyF_F_cable = "<< bodyF_F_cable << std::endl;
     //std::cout << "linAngVel_ = "<< linAngVel_ << std::endl;
@@ -267,29 +303,36 @@ void Underwater_Vehicle::SetCableLength(const double &l){
 }
 
 void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
-    K = params.K_diag.asDiagonal();
-    Q = params.Q_diag.asDiagonal();
-    if(params.T_vector.size() == 36){
+
+    if(!params.heavyConf){
+        params.K_diag.conservativeResize(6,1);
+        params.Q_diag.conservativeResize(6,1);
+        K.resize(6,6);
+        K = params.K_diag.asDiagonal();
+        Q.resize(6,6);
+        Q = params.Q_diag.asDiagonal();
+        T.resize(6,6);
         T.row(0) = params.T_vector.segment(0,6);
         T.row(1) = params.T_vector.segment(6,6);
         T.row(2) = params.T_vector.segment(12,6);
         T.row(3) = params.T_vector.segment(18,6);
         T.row(4) = params.T_vector.segment(24,6);
         T.row(5) = params.T_vector.segment(30,6);
-        if(K.size()!= 6) std::cout << "ERROR: K and T size are not compatible" << std::endl;
     }
-    else if(params.T_vector.size() == 48){
+    else{
+        params.K_diag.conservativeResize(8,1);
+        params.Q_diag.conservativeResize(8,1);
+        K.resize(8,8);
+        K = params.K_diag.asDiagonal();
+        Q.resize(8,8);
+        Q = params.Q_diag.asDiagonal();
+        T.resize(6,8);
         T.row(0) = params.T_vector.segment(0,8);
         T.row(1) = params.T_vector.segment(8,8);
         T.row(2) = params.T_vector.segment(16,8);
         T.row(3) = params.T_vector.segment(24,8);
         T.row(4) = params.T_vector.segment(32,8);
         T.row(5) = params.T_vector.segment(40,8);
-        if(K.size()!= 8) std::cout << "ERROR: K and T size are not compatible" << std::endl;
-    }
-    else{
-        T.setZero();
-        std::cout << "T thruseter allocation matrix is not correct (size)" << std::endl;
     }
 
     M = getM();
@@ -309,7 +352,7 @@ void Underwater_Vehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eige
 
 Eigen::Vector6d Underwater_Vehicle::ThusterAllocation(const Eigen::Vector6d &tau){
 
-    Eigen::MatrixXd m = T*K;
+    Eigen::MatrixXd m = T * K;
     Eigen::JacobiSVD<Eigen::MatrixXd> svd( m, Eigen::ComputeFullV | Eigen::ComputeFullU );
     //Eigen::Vector6d rhs; rhs = tau;
 
