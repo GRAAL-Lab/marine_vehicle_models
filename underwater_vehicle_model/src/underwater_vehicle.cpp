@@ -159,12 +159,16 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
         if(F > 0) Ftot = Ftot + F;
         //std::cout << "F-cd = "<< F << std::endl;
 
-        double q;
+        //double q;
         double r = delta_worldF.norm() - length;
-        if(r < 0) q = pow(2*r + 1, 2)*(1 - 4*r);
-        else q = 1;
+        //if(r < 0) q = pow(2*r + 1, 2)*(1 - 4*r);
+        //else q = 1;
+        //worldF_F = - q * Ftot * v_cable;
+        double rmin = - 0.5; double rmax = 0.0;
+        double ymin = 0.0; double ymax = 1.0;
+        double gain = rml::IncreasingBellShapedFunction(rmin, rmax, ymin, ymax, r);
 
-        worldF_F = - q * Ftot * v_cable;
+        worldF_F = - gain * Ftot * v_cable;
         bodyF_F = bodyF_R_worldF * worldF_F;
         bodyF_M = Cable_params.AttachPoint.cross(bodyF_F);
         bodyF_FandM << bodyF_F, bodyF_M;
