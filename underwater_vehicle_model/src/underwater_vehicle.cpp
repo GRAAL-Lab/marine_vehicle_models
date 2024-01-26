@@ -2,7 +2,7 @@
 #include "rml/RML.h"
 #include <cmath>
 
-Underwater_Vehicle::Underwater_Vehicle() {
+UnderwaterVehicle::UnderwaterVehicle() {
     /*if(!params.heavyConf){
         params.K_diag.conservativeResize(6,1);
         params.Q_diag.conservativeResize(6,1);
@@ -36,7 +36,7 @@ Underwater_Vehicle::Underwater_Vehicle() {
     //params.Kp = K;*/
 }
 
-void Underwater_Vehicle::DirectDynamics(const Eigen::VectorXd& volt, const Eigen::Vector6d& bodyF_F_cable,
+void UnderwaterVehicle::DirectDynamics(const Eigen::VectorXd& volt, const Eigen::Vector6d& bodyF_F_cable,
                                         const Eigen::RotationMatrix& worldF_R_bodyF, const Eigen::Vector6d& linAngVel_,  Eigen::Vector6d& linAngAcc_)
 {
     //Eigen::Vector6d applied_volt;
@@ -51,9 +51,9 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::VectorXd& volt, const Eigen
     //linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ - g);
     //linAngAcc_ = Minv * (T * K * F - (C + D)*linAngVel_ + g); correct one
     //ThrustersSaturation(volt,1.0);
-    linAngAcc_ = Minv * (T * K * volt - (C + D)*linAngVel_ + bodyF_g + bodyF_F_cable);
+    linAngAcc_ = Minv * (params.T * params.K * params.Q * volt - (C + D)*linAngVel_ + bodyF_g + bodyF_F_cable);
     bodyF_F_coriolis_drag = - (C + D)*linAngVel_;
-    body_F_thruster = T * K * volt;
+    body_F_thruster = params.T * params.K * params.Q * volt;
     //std::cout << "volt = "<< volt << std::endl;
     //std::cout << "T = "<< T << std::endl;
     //std::cout << "K = "<< K << std::endl;
@@ -81,7 +81,7 @@ void Underwater_Vehicle::DirectDynamics(const Eigen::VectorXd& volt, const Eigen
 }
 
 
-Eigen::Matrix3d Underwater_Vehicle::get_TensorInertia()
+Eigen::Matrix3d UnderwaterVehicle::get_TensorInertia()
 {
     //Tensor Inertia
     /*
@@ -115,7 +115,7 @@ Eigen::Matrix3d Underwater_Vehicle::get_TensorInertia()
     return TensorInertia_b;
 }
 
-Eigen::Vector6d Underwater_Vehicle::VoltageToForces(const Eigen::Vector6d& volt){
+Eigen::Vector6d UnderwaterVehicle::VoltageToForces(const Eigen::Vector6d& volt){
     Eigen::Vector6d F;
     for(int i=0; i<6; i++)
         F[i] = -140.3 * pow(volt[i],9) + 389.9 * pow(volt[i],7) - 404.1 * pow(volt[i],5) + 176.0 * pow(volt[i],3) + 8.9 * volt[i];
@@ -126,7 +126,7 @@ Eigen::Vector6d Underwater_Vehicle::VoltageToForces(const Eigen::Vector6d& volt)
 }
 
 
-Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF,
+Eigen::Vector6d UnderwaterVehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF,
                                                         const float &length, const Eigen::RotationMatrix &worldF_R_bodyF){
 
     Eigen::Vector3d worldF_F, bodyF_F;
@@ -187,7 +187,7 @@ Eigen::Vector6d Underwater_Vehicle::ComputeFcable_bodyF(const Eigen::Vector3d &s
     return bodyF_FandM;
 }
 
-Eigen::Matrix6d Underwater_Vehicle::getM()
+Eigen::Matrix6d UnderwaterVehicle::getM()
 {
     Eigen::Matrix6d M_RB;
     Eigen::Matrix3d I;
@@ -210,7 +210,7 @@ Eigen::Matrix6d Underwater_Vehicle::getM()
     return M;
 }
 
-Eigen::Matrix6d Underwater_Vehicle::getInvM()
+Eigen::Matrix6d UnderwaterVehicle::getInvM()
 {
     Eigen::Matrix6d M_inv; // inverse of the system inertia matrix
     rml::RegularizationData regData;
@@ -221,7 +221,7 @@ Eigen::Matrix6d Underwater_Vehicle::getInvM()
 }
 
 
-Eigen::Matrix6d Underwater_Vehicle::getC(const Eigen::Vector6d &v_rel)
+Eigen::Matrix6d UnderwaterVehicle::getC(const Eigen::Vector6d &v_rel)
 {
     Eigen::Vector3d v1, v2;
     v1 = v_rel.segment(0,3);
@@ -255,7 +255,7 @@ Eigen::Matrix6d Underwater_Vehicle::getC(const Eigen::Vector6d &v_rel)
     return C;
 }
 
-Eigen::Matrix6d Underwater_Vehicle::getD(const Eigen::Vector6d &v_rel)
+Eigen::Matrix6d UnderwaterVehicle::getD(const Eigen::Vector6d &v_rel)
 {
     Eigen::Vector6d s;
     s = v_rel.cwiseAbs();
@@ -272,7 +272,7 @@ Eigen::Matrix6d Underwater_Vehicle::getD(const Eigen::Vector6d &v_rel)
     return D;
 }
 
-Eigen::Vector6d Underwater_Vehicle::ComputeG_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF)
+Eigen::Vector6d UnderwaterVehicle::ComputeG_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF)
 {
     bodyF_g.setZero();
 
@@ -297,17 +297,17 @@ Eigen::Vector6d Underwater_Vehicle::ComputeG_bodyF(const Eigen::RotationMatrix& 
     return bodyF_g;
 }
 
-float Underwater_Vehicle::GetCableCurrentLength(){
+float UnderwaterVehicle::GetCableCurrentLength(){
     return cable_length;
 }
 
-void Underwater_Vehicle::SetCableLength(const double &l){
+void UnderwaterVehicle::SetCableLength(const double &l){
     if(l <= Cable_params.length_full)
         cable_length =l;
 }
 
-void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
-
+void UnderwaterVehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
+/*
     if(!params.heavyConf){
         params.K_diag.conservativeResize(6,1);
         params.Q_diag.conservativeResize(6,1);
@@ -338,7 +338,7 @@ void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const 
         T.row(4) = params.T_vector.segment(32,8);
         T.row(5) = params.T_vector.segment(40,8);
     }
-
+*/
     M = getM();
     Minv = getInvM();
     C = getC(v_rel);
@@ -348,22 +348,23 @@ void Underwater_Vehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const 
     Cable_params.AttachPoint = {-params.L / 2, 0.0, 0.0};
 }
 
-void Underwater_Vehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
+void UnderwaterVehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
     C = getC(v_rel);
     D = getD(v_rel);
     bodyF_g = ComputeG_bodyF(worldF_R_bodyF);
 }
 
-Eigen::Vector6d Underwater_Vehicle::ThusterAllocation(const Eigen::Vector6d &tau){ // not needed anymore (functions moved to dynamic controller)
+Eigen::Vector6d UnderwaterVehicle::ThusterAllocation(const Eigen::Vector6d &tau){ // not needed anymore (functions moved to dynamic controller)
 
-    Eigen::MatrixXd m = T * K * Q;
+    //Eigen::MatrixXd m = T * K * Q;
+    Eigen::MatrixXd m = params.T * params.K * params.Q;
     Eigen::JacobiSVD<Eigen::MatrixXd> svd( m, Eigen::ComputeFullV | Eigen::ComputeFullU );
     //Eigen::Vector6d rhs; rhs = tau;
 
     return svd.solve(tau);
 }
 
-void Underwater_Vehicle::ThrustersSaturation(Eigen::VectorXd &thruster_force, const double& Saturation) // maybe we don't need it
+void UnderwaterVehicle::ThrustersSaturation(Eigen::VectorXd &thruster_force, const double& Saturation) // maybe we don't need it
 {
     for (int i = 0 ;i < thruster_force.size() ; i++){
         if(thruster_force[i] > Saturation)
@@ -375,32 +376,32 @@ void Underwater_Vehicle::ThrustersSaturation(Eigen::VectorXd &thruster_force, co
 }
 
 // not needed anymore (functions moved to dynamic controller)
-void Underwater_Vehicle::Halt(Eigen::Vector6d &volt){
+void UnderwaterVehicle::Halt(Eigen::Vector6d &volt){
     volt.setZero();
 }
 
-void Underwater_Vehicle::Hold(Eigen::Vector6d &volt){
+void UnderwaterVehicle::Hold(Eigen::Vector6d &volt){
 
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
-void Underwater_Vehicle::moveUp(Eigen::Vector6d &volt){
+void UnderwaterVehicle::moveUp(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[2] = -10.0;
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
-void Underwater_Vehicle::moveDown(Eigen::Vector6d &volt){
+void UnderwaterVehicle::moveDown(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[2] = 10.0;
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
-void Underwater_Vehicle::moveForward(Eigen::Vector6d &volt){
+void UnderwaterVehicle::moveForward(Eigen::Vector6d &volt){
     //Eigen::Vector6d tau = bodyF_F_coriolis_drag + bodyF_g;
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
@@ -408,28 +409,28 @@ void Underwater_Vehicle::moveForward(Eigen::Vector6d &volt){
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
-void Underwater_Vehicle::moveBackward(Eigen::Vector6d &volt){
+void UnderwaterVehicle::moveBackward(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[0] = -10.0;
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
-void Underwater_Vehicle::moveLeft(Eigen::Vector6d &volt){
+void UnderwaterVehicle::moveLeft(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[5] = -0.1;
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
-void Underwater_Vehicle::moveRight(Eigen::Vector6d &volt){
+void UnderwaterVehicle::moveRight(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[5] = 0.1;
     volt = ThusterAllocation(-tau + tau_ref);
 }
 
-void Underwater_Vehicle::MoveByForce(const Eigen::Vector6d &force, Eigen::Vector6d &volt){
+void UnderwaterVehicle::MoveByForce(const Eigen::Vector6d &force, Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     //Eigen::Vector6d tau_ref; tau_ref.setZero();
     //tau_ref[5] = 0.1;
@@ -437,19 +438,19 @@ void Underwater_Vehicle::MoveByForce(const Eigen::Vector6d &force, Eigen::Vector
 }
 // all the previous functions are not needed anymore
 
-Eigen::Vector6d Underwater_Vehicle::getg_bodyF(){
+Eigen::Vector6d UnderwaterVehicle::getg_bodyF(){
     return bodyF_g;
 }
 
-Eigen::Vector6d Underwater_Vehicle::getFcable_bodyF(){
+Eigen::Vector6d UnderwaterVehicle::getFcable_bodyF(){
     return bodyF_F_cable;
 }
 
-Eigen::Vector6d Underwater_Vehicle::getFthruster_bodyF(){
+Eigen::Vector6d UnderwaterVehicle::getFthruster_bodyF(){
     return body_F_thruster;
 }
 
-Eigen::Vector6d Underwater_Vehicle::getCoriolisAndDrag_bodyF(){
+Eigen::Vector6d UnderwaterVehicle::getCoriolisAndDrag_bodyF(){
     return bodyF_F_coriolis_drag;
 }
 
