@@ -46,7 +46,7 @@ public:
     //void DirectDynamics(const Eigen::Vector6d& volt_bodyF, const Eigen::Vector6d& bodyF_F_cable, const Eigen::Vector6d& eta, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
     void DirectDynamics(const Eigen::VectorXd& volt, const Eigen::Vector6d& bodyF_F_cable,
                         const Eigen::RotationMatrix& worldF_R_bodyF, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
-    Eigen::Vector2d ThusterAllocation(Eigen::Vector2d& tau);
+    //Eigen::Vector2d ThusterAllocation(Eigen::Vector2d& tau);
     void InverseMotorsEquations(const Eigen::Vector6d& linAngVel, Eigen::Vector2d thrust_force, double& h_p, double& h_s);
     //void ThrustersSaturation(double lThruster, double rThruster, double thMin, double thMax, double& lSatOut, double& rSatOut);
     //void ThrusterDynamicAllocator(const double f_des, const double n_des, double& h_s, double &h_p);
@@ -56,7 +56,7 @@ public:
     Eigen::Matrix6d getD(const Eigen::Vector6d &v_rel);
     Eigen::Vector6d ComputeG_bodyF(const Eigen::RotationMatrix& worldF_R_bodyF);
     void ThrustersSaturation(Eigen::VectorXd &thruster_force, const double& Saturation); // maybe we don't need it
-    Eigen::Vector6d ThusterAllocation(const Eigen::Vector6d& tau);
+    Eigen::VectorXd ThusterAllocation(const Eigen::Vector6d& tau);
     void Halt(Eigen::Vector6d &volt);
     void Hold(Eigen::Vector6d &volt);
     void moveUp(Eigen::Vector6d &volt);

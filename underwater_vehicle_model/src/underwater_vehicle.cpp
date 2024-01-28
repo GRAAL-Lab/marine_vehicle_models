@@ -354,14 +354,14 @@ void UnderwaterVehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen
     bodyF_g = ComputeG_bodyF(worldF_R_bodyF);
 }
 
-Eigen::Vector6d UnderwaterVehicle::ThusterAllocation(const Eigen::Vector6d &tau){ // not needed anymore (functions moved to dynamic controller)
+Eigen::VectorXd UnderwaterVehicle::ThusterAllocation(const Eigen::Vector6d &tau){ // not needed anymore (functions moved to dynamic controller)
 
     //Eigen::MatrixXd m = T * K * Q;
     Eigen::MatrixXd m = params.T * params.K * params.Q;
     Eigen::JacobiSVD<Eigen::MatrixXd> svd( m, Eigen::ComputeFullV | Eigen::ComputeFullU );
-    //Eigen::Vector6d rhs; rhs = tau;
+    Eigen::VectorXd volt = svd.solve(tau);
 
-    return svd.solve(tau);
+    return volt;
 }
 
 void UnderwaterVehicle::ThrustersSaturation(Eigen::VectorXd &thruster_force, const double& Saturation) // maybe we don't need it
