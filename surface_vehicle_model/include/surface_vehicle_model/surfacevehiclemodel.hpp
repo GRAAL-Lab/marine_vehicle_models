@@ -21,6 +21,7 @@ struct SurfaceVehicleModelParameters {
     double rpmDynState;
     double rpmDynPosPerc;
     double rpmDynNegPerc;
+    double b1_pp, b2_pp, b1_pn, b2_pn, b1_np, b2_np, b1_nn, b2_nn;
     Eigen::Matrix3d Inertia;
 
     SurfaceVehicleModelParameters()
@@ -38,6 +39,8 @@ struct SurfaceVehicleModelParameters {
         , rpmDynState(0.0)
         , rpmDynPosPerc(0.0)
         , rpmDynNegPerc(0.0)
+        , b1_pp(0.0), b2_pp(0.0), b1_pn(0.0), b2_pn(0.0)
+        , b1_np(0.0), b2_np(0.0), b1_nn(0.0), b2_nn(0.0)
     {
         cX.setZero();
         cY.setZero();
@@ -69,59 +72,6 @@ struct SurfaceVehicleModelParameters {
                   << a.Inertia.format(TabbedCleanFmt);
     }
 
-    /*bool ConfigureFromFile(const libconfig::Setting& ulisseModel) noexcept(false)
-    {
-        if (!ctb::GetParamVector(ulisseModel, cN, "cN"))
-            return false;
-        if (!ctb::GetParamVector(ulisseModel, cX, "cX"))
-            return false;
-        if (!ctb::GetParamVector(ulisseModel, cY, "cY"))
-            return false;
-        if (!ctb::GetParamVector(ulisseModel, cNneg, "cNneg"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, lambda_neg, "lambdaNeg"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, lambda_pos, "lambdaPos"))
-            return false;
-
-        if (!ctb::GetParam(ulisseModel, b1_neg, "b1Neg"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, b1_pos, "b1Pos"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, b2_neg, "b2Neg"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, b2_pos, "b2Pos"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, d, "motorsTransversalDistance"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, hullWidth, "hullWidth"))
-            return false;
-
-        if (!ctb::GetParam(ulisseModel, l, "motorsLongitudinalDistance"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, k_pos, "kPos"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, k_neg, "kNeg"))
-            return false;
-
-        if (!ctb::GetParam(ulisseModel, rpmDynState, "rpmDynState"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, rpmDynPosPerc, "rpmDynPosPerc"))
-            return false;
-        if (!ctb::GetParam(ulisseModel, rpmDynNegPerc, "rpmDynNegPerc"))
-            return false;
-
-
-        Eigen::Vector3d tmp_Inerzia;
-        tmp_Inerzia.setZero();
-        if (!ctb::GetParamVector(ulisseModel, tmp_Inerzia, "inertia"))
-            return false;
-
-        Inertia.diagonal() = Eigen::Map<Eigen::Matrix<double, 3, 1>>(tmp_Inerzia.data());
-
-        return true;
-    }*/
-
     bool LoadConfiguration(const libconfig::Config& confObj) noexcept(false)
     {
         const libconfig::Setting& root = confObj.getRoot();
@@ -147,6 +97,22 @@ struct SurfaceVehicleModelParameters {
             return false;
         if (!ctb::GetParam(ulisseModel, b2_pos, "b2Pos"))
             return false;
+        if (!ctb::GetParam(ulisseModel, b1_pp, "b1_pp"))
+            return false;
+        if (!ctb::GetParam(ulisseModel, b2_pp, "b2_pp"))
+            return false;
+        if (!ctb::GetParam(ulisseModel, b1_pn, "b1_pn"))
+            return false;
+        if (!ctb::GetParam(ulisseModel, b2_pn, "b2_pn"))
+            return false;
+        if (!ctb::GetParam(ulisseModel, b1_np, "b1_np"))
+            return false;
+        if (!ctb::GetParam(ulisseModel, b2_np, "b2_np"))
+            return false;
+        if (!ctb::GetParam(ulisseModel, b1_nn, "b1_nn"))
+            return false;
+        if (!ctb::GetParam(ulisseModel, b2_nn, "b2_nn"))
+            return false;
         if (!ctb::GetParam(ulisseModel, d, "motorsTransversalDistance"))
             return false;
         if (!ctb::GetParam(ulisseModel, hullWidth, "hullWidth"))
@@ -164,12 +130,12 @@ struct SurfaceVehicleModelParameters {
         if (!ctb::GetParam(ulisseModel, rpmDynNegPerc, "rpmDynNegPerc"))
             return false;
 
-        Eigen::Vector3d tmp_Inerzia;
-        tmp_Inerzia.setZero();
-        if (!ctb::GetParamVector(ulisseModel, tmp_Inerzia, "inertia"))
+        Eigen::Vector3d tmp_Inertia;
+        tmp_Inertia.setZero();
+        if (!ctb::GetParamVector(ulisseModel, tmp_Inertia, "inertia"))
             return false;
 
-        Inertia.diagonal() = Eigen::Map<Eigen::Matrix<double, 3, 1>>(tmp_Inerzia.data());
+        Inertia.diagonal() = Eigen::Map<Eigen::Matrix<double, 3, 1>>(tmp_Inertia.data());
 
         return true;
     }
