@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
 project(surface_vehicle_model)
 
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)
-endif()
+#if(NOT CMAKE_CXX_STANDARD)
+set(CMAKE_CXX_STANDARD 17)
+#endif()
+
+#if(NOT CMAKE_BUILD_TYPE)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
+#endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -20,6 +24,7 @@ file(GLOB_RECURSE SOURCE_FILES
     "msg/*.msg"
     "*.xml"
     "launch/*.py"
+    "conf/*"
 )
 add_custom_target(.Files. SOURCES ${SOURCE_FILES})
 
