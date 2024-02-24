@@ -297,13 +297,33 @@ Eigen::Vector6d UnderwaterVehicle::ComputeG_bodyF(const Eigen::RotationMatrix& w
     return bodyF_g;
 }
 
-float UnderwaterVehicle::GetCableCurrentLength(){
-    return cable_length;
+float UnderwaterVehicle::GetCableReleasedLength(){
+    return cable_length_released;
+}
+
+float UnderwaterVehicle::GetCableLayer(){
+    return current_layer;
+}
+
+float UnderwaterVehicle::GetCableWindingRadius(){
+    return R;
+}
+
+float UnderwaterVehicle::GetWinchRPM(){
+    return winchRPM;
 }
 
 void UnderwaterVehicle::SetCableLength(const double &l){
     if(l <= Cable_params.length_full)
-        cable_length =l;
+        cable_length_released =l;
+
+    for(int i =0; i < N_layer; i++)
+        if(cable_length_released > CableLengthThreshold[i]){
+            current_layer = i;
+            break;
+        }
+    R = WindingRadiusPerLayer[current_layer];
+
 }
 
 void UnderwaterVehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
@@ -346,6 +366,77 @@ void UnderwaterVehicle::InitializeMatrices(const Eigen::Vector6d &v_rel, const E
     bodyF_g = ComputeG_bodyF(worldF_R_bodyF);
 
     Cable_params.AttachPoint = {-params.L / 2, 0.0, 0.0};
+}
+
+void UnderwaterVehicle::InitializeCableWinch(){
+
+    CircleNumberPerLayer = Cable_params.SpoolWidth / Cable_params.diameter;
+    h = sqrt(3)/2 * Cable_params.diameter;
+    h_total = 0;
+    R = Cable_params.SpoolDiameter/2;
+
+    float length, lengthPerLayer;
+    length = Cable_params.length_full;
+    lengthPerLayer = 2 * M_PI * R / 1000 * CircleNumberPerLayer;
+    int i=0;
+    MaxCableLengthPerLayer.resize(100);
+    WindingRadiusPerLayer.resize(100);
+    while(length > lengthPerLayer){
+        WindingRadiusPerLayer[i] = R;
+        MaxCableLengthPerLayer[i] = lengthPerLayer;
+        length = length - lengthPerLayer;
+        h_total = h_total + h;
+        R = Cable_params.SpoolDiameter/2 + h_total;
+        lengthPerLayer = 2 * M_PI * R / 1000 * CircleNumberPerLayer;
+        i++;
+    }
+    MaxCableLengthPerLayer[i] = length;
+    WindingRadiusPerLayer[i] = R;
+    current_layer = i;
+    N_layer = i+1;
+    MaxCableLengthPerLayer.conservativeResize(N_layer);
+    WindingRadiusPerLayer.conservativeResize(N_layer);
+
+    CableLengthThreshold.resize(N_layer);
+    CableLengthThreshold.setZero();
+    Eigen::VectorXf v;
+    v.resize(N_layer);
+    for (int j = 1; j < N_layer; j++){
+        v.setZero();
+        v.segment(0, N_layer - j) = MaxCableLengthPerLayer.tail(N_layer - j);
+        //CableLengthThreshold = CableLengthThreshold + CableLengthThreshold.tail(N_layer - j);
+        CableLengthThreshold = CableLengthThreshold + v;
+    }
+    cable_length_released = 0;
+    winchRPM = 0;
+    std::cout << "CircleNumberPerLayer = "<< CircleNumberPerLayer<< std::endl;
+    std::cout << "N_layer = "<< N_layer<< std::endl;
+    std::cout << "h = "<< h<< std::endl;
+    std::cout << "MaxCableLengthPerLayer = "<< MaxCableLengthPerLayer<< std::endl;
+    std::cout << "CableLengthThreshold = "<< CableLengthThreshold<< std::endl;
+    std::cout << "WindingRadiusPerLayer = "<< WindingRadiusPerLayer<< std::endl;
+}
+
+void UnderwaterVehicle::RunCableWinch(const float &rpm, float &velocity){
+    float w = M_PI/30 * rpm;
+    winchRPM = rpm;
+    velocity = w * R / 1000;
+}
+
+void UnderwaterVehicle::UpdateCableLength(const float &v, const float &dt){
+    cable_length_released = cable_length_released + v * dt;
+
+    if(cable_length_released > Cable_params.length_full)
+        cable_length_released = Cable_params.length_full;
+    else if(Cable_params.length_full < 0)
+        cable_length_released = 0;
+
+    for(int i =0; i < N_layer; i++)
+        if(cable_length_released > CableLengthThreshold[i]){
+            current_layer = i;
+            break;
+        }
+    R = WindingRadiusPerLayer[current_layer];
 }
 
 void UnderwaterVehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){

@@ -30,7 +30,17 @@ class UnderwaterVehicle {
     Eigen::Vector6d u_motor; // motor commands
     Eigen::Matrix3d I0; // motor commands
 
-    float cable_length; // ?
+    float cable_length_released; // ?
+    int CircleNumberPerLayer;
+    float h; // the vertical distance between two layer
+    float h_total;
+    float R; // Spool Radius
+    int current_layer;
+    int N_layer; // total number of cable layer on the spool
+    float winchRPM;
+    Eigen::VectorXf MaxCableLengthPerLayer;
+    Eigen::VectorXf WindingRadiusPerLayer;
+    Eigen::VectorXf CableLengthThreshold;
     //Eigen::Vector3d startingPos_cable; // ?
     //Eigen::Vector3d endingPos_cable; // ?
 
@@ -75,12 +85,18 @@ public:
     //void UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::Vector6d &eta);
     void UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF);
     void InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF);
+    void InitializeCableWinch();
+    void RunCableWinch(const float &rpm, float &velocity);
+    void UpdateCableLength(const float &v, const float &dt);
     Eigen::Vector6d VoltageToForces(const Eigen::Vector6d& volt);
 
     Eigen::Vector6d ComputeFcable_bodyF(const Eigen::Vector3d &s_pos_worldF, const Eigen::Vector3d &e_pos_worldF, const float &length, const Eigen::RotationMatrix &worldF_R_bodyF);
     //double GetCablePos_starting();
     //double GetCablePos_ending();
-    float GetCableCurrentLength();
+    float GetCableReleasedLength();
+    float GetCableLayer();
+    float GetCableWindingRadius();
+    float GetWinchRPM();
 
     //void SetCablePos_starting(const Eigen::Vector3d &pos);
     //void SetCablePos_ending(const Eigen::Vector3d &pos);
