@@ -101,6 +101,7 @@ public:
     //void SetCablePos_starting(const Eigen::Vector3d &pos);
     //void SetCablePos_ending(const Eigen::Vector3d &pos);
     void SetCableLength(const double &l);
+    void RunCableWinchToReachLength(const float &rpm, const double &l, const float &dt);
 };
 
 #endif // UNDERWATER_VEHICLE_H

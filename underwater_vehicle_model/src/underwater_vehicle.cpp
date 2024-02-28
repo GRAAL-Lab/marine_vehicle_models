@@ -439,6 +439,18 @@ void UnderwaterVehicle::UpdateCableLength(const float &v, const float &dt){
     R = WindingRadiusPerLayer[current_layer];
 }
 
+void UnderwaterVehicle::RunCableWinchToReachLength(const float &rpm, const double &l, const float &dt){
+    if(cable_length_released < l){
+        float w = M_PI/30 * rpm;
+        winchRPM = rpm;
+        float v = w * R / 1000;
+
+        UpdateCableLength(v,dt);
+    }
+    else winchRPM =0;
+
+}
+
 void UnderwaterVehicle::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF){
     C = getC(v_rel);
     D = getD(v_rel);
