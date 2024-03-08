@@ -176,6 +176,7 @@ struct CableParameters{
     float stiffness;
     float SpoolWidth;
     float SpoolDiameter;
+    float winch_rpm;
 
     /*float length;
     Eigen::Vector3d pos_starting;
@@ -211,6 +212,8 @@ struct CableParameters{
         if (!ctb::GetParam(blueROVmodel, SpoolDiameter, "spool_diameter"))
             return false;
         if (!ctb::GetParamVector(blueROVmodel, AttachPoint, "cable_AttachPoint"))
+            return false;
+        if (!ctb::GetParam(blueROVmodel, winch_rpm, "winch_rpm"))
             return false;
 
         return true;

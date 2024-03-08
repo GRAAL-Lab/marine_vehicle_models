@@ -439,12 +439,24 @@ void UnderwaterVehicle::UpdateCableLength(const float &v, const float &dt){
     R = WindingRadiusPerLayer[current_layer];
 }
 
-void UnderwaterVehicle::RunCableWinchToReachLength(const float &rpm, const double &l, const float &dt){
-    if(cable_length_released < l){
-        float w = M_PI/30 * rpm;
-        winchRPM = rpm;
-        float v = w * R / 1000;
+void UnderwaterVehicle::RunCableWinchToReachLength(const float &rpm, float &l, const float &dt){
+    float precision = 1; float w;
 
+    if(l > Cable_params.length_full)
+        l = Cable_params.length_full;
+    else if(l < 0)
+        l = 0;
+
+    if(abs(cable_length_released - l) > precision){
+        if(cable_length_released < l){
+            w = M_PI/30 * rpm;
+            winchRPM = rpm;
+        }
+        else{
+            w = - M_PI/30 * rpm;
+            winchRPM = - rpm;
+        }
+        float v = w * R / 1000;
         UpdateCableLength(v,dt);
     }
     else winchRPM =0;
