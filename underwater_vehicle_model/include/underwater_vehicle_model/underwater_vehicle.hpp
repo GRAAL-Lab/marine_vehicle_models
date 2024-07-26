@@ -30,14 +30,14 @@ class UnderwaterVehicle {
     Eigen::Vector6d u_motor; // motor commands
     Eigen::Matrix3d I0; // motor commands
 
-    float cable_length_released; // ?
+    float cable_length_released_; // ?
     int CircleNumberPerLayer;
     float h; // the vertical distance between two layer
     float h_total;
     float R; // Spool Radius
     int current_layer;
     int N_layer; // total number of cable layer on the spool
-    float winchRPM;
+    float winchRPM_;
     Eigen::VectorXf MaxCableLengthPerLayer;
     Eigen::VectorXf WindingRadiusPerLayer;
     Eigen::VectorXf CableLengthThreshold;

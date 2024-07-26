@@ -171,7 +171,8 @@ struct UnderwaterModelParameters{
 
 struct CableParameters{
 
-    float length_full;
+    float length_max;
+    float length_min;
     float diameter;
     float stiffness;
     float SpoolWidth;
@@ -185,7 +186,8 @@ struct CableParameters{
     Eigen::Vector3d AttachPoint; // the cable fixing point on ROV
 
     CableParameters()
-        : length_full(0.0)
+        : length_max(0.0)
+        , length_min(0.0)
         , diameter(0.0)
         , stiffness(0.0)
     //    , length(0.0)
@@ -201,7 +203,9 @@ struct CableParameters{
         const libconfig::Setting& root = confObj.getRoot();
         const libconfig::Setting& blueROVmodel = root["blueROVmodel"];
 
-        if (!ctb::GetParam(blueROVmodel, length_full, "cable_length_full"))
+        if (!ctb::GetParam(blueROVmodel, length_max, "cable_length_max"))
+            return false;
+        if (!ctb::GetParam(blueROVmodel, length_min, "cable_length_min"))
             return false;
         if (!ctb::GetParam(blueROVmodel, diameter, "cable_diameter"))
             return false;

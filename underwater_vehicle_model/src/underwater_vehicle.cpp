@@ -298,7 +298,7 @@ Eigen::Vector6d UnderwaterVehicle::ComputeG_bodyF(const Eigen::RotationMatrix& w
 }
 
 float UnderwaterVehicle::GetCableReleasedLength(){
-    return cable_length_released;
+    return cable_length_released_;
 }
 
 float UnderwaterVehicle::GetCableLayer(){
@@ -310,15 +310,15 @@ float UnderwaterVehicle::GetCableWindingRadius(){
 }
 
 float UnderwaterVehicle::GetWinchRPM(){
-    return winchRPM;
+    return winchRPM_;
 }
 
 void UnderwaterVehicle::SetCableLength(const double &l){
-    if(l <= Cable_params.length_full)
-        cable_length_released =l;
+    if(l <= Cable_params.length_max && l >= Cable_params.length_min)
+        cable_length_released_ =l;
 
     for(int i =0; i < N_layer; i++)
-        if(cable_length_released > CableLengthThreshold[i]){
+        if(cable_length_released_ > CableLengthThreshold[i]){
             current_layer = i;
             break;
         }
@@ -376,7 +376,7 @@ void UnderwaterVehicle::InitializeCableWinch(){
     R = Cable_params.SpoolDiameter/2;
 
     float length, lengthPerLayer;
-    length = Cable_params.length_full;
+    length = Cable_params.length_max;
     lengthPerLayer = 2 * M_PI * R / 1000 * CircleNumberPerLayer;
     int i=0;
     MaxCableLengthPerLayer.resize(100);
@@ -407,8 +407,8 @@ void UnderwaterVehicle::InitializeCableWinch(){
         //CableLengthThreshold = CableLengthThreshold + CableLengthThreshold.tail(N_layer - j);
         CableLengthThreshold = CableLengthThreshold + v;
     }
-    cable_length_released = 0;
-    winchRPM = 0;
+    cable_length_released_ = 0;
+    winchRPM_ = 0;
     std::cout << "CircleNumberPerLayer = "<< CircleNumberPerLayer<< std::endl;
     std::cout << "N_layer = "<< N_layer<< std::endl;
     std::cout << "h = "<< h<< std::endl;
@@ -419,20 +419,24 @@ void UnderwaterVehicle::InitializeCableWinch(){
 
 void UnderwaterVehicle::RunCableWinch(const float &rpm, float &velocity){
     float w = M_PI/30 * rpm;
-    winchRPM = rpm;
+    winchRPM_ = rpm;
     velocity = w * R / 1000;
 }
 
-void UnderwaterVehicle::UpdateCableLength(const float &v, const float &dt){
-    cable_length_released = cable_length_released + v * dt;
+void UnderwaterVehicle::UpdateCableLength(const float &percentage, const float &dt){
+    float w = M_PI/30 * winchRPM_ * percentage;
+    float v = w * R;
+    cable_length_released_ = cable_length_released_ + v * dt;
 
-    if(cable_length_released > Cable_params.length_full)
-        cable_length_released = Cable_params.length_full;
-    else if(Cable_params.length_full < 0)
-        cable_length_released = 0;
+    if(cable_length_released_ > Cable_params.length_max)
+        cable_length_released_ = Cable_params.length_max;
+    else if(cable_length_released_ < Cable_params.length_min)
+        cable_length_released_ = Cable_params.length_min;
+    else
+        cable_length_released_ = 0;
 
     for(int i =0; i < N_layer; i++)
-        if(cable_length_released > CableLengthThreshold[i]){
+        if(cable_length_released_ > CableLengthThreshold[i]){
             current_layer = i;
             break;
         }
@@ -442,24 +446,24 @@ void UnderwaterVehicle::UpdateCableLength(const float &v, const float &dt){
 void UnderwaterVehicle::RunCableWinchToReachLength(const float &rpm, float &l, const float &dt){
     float precision = 1; float w;
 
-    if(l > Cable_params.length_full)
-        l = Cable_params.length_full;
-    else if(l < 0)
-        l = 0;
+    if(l > Cable_params.length_max)
+        l = Cable_params.length_max;
+    else if(l < Cable_params.length_min)
+        l = Cable_params.length_min;
 
-    if(abs(cable_length_released - l) > precision){
-        if(cable_length_released < l){
+    if(abs(cable_length_released_ - l) > precision){
+        if(cable_length_released_ < l){
             w = M_PI/30 * rpm;
-            winchRPM = rpm;
+            winchRPM_ = rpm;
         }
         else{
             w = - M_PI/30 * rpm;
-            winchRPM = - rpm;
+            winchRPM_ = - rpm;
         }
         float v = w * R / 1000;
         UpdateCableLength(v,dt);
     }
-    else winchRPM =0;
+    else winchRPM_ =0;
 
 }
 
