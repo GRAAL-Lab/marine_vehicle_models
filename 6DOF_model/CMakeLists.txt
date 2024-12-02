@@ -13,7 +13,7 @@ endif()
 
 # Find required dependencies
 find_package(Eigen3 REQUIRED)
-find_package(libconfig REQUIRED)
+find_package(PkgConfig REQUIRED)
 find_library(RML_LIBRARY NAMES rml)
 
 # Prefer shared libraries over static ones
@@ -35,14 +35,13 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   ${EIGEN3_INCLUDE_DIRS}
-  ${libconfig_INCLUDE_DIRS}
+  ${PkgConfig_INCLUDE_DIRS}
 )
 
 # Link additional libraries
 target_link_libraries(${PROJECT_NAME}
   ${QPOASES_LIBRARY}
   ${RML_LIBRARY}
-  config++
 )
 
 # Install include files

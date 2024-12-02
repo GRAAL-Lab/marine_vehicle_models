@@ -1,221 +1,255 @@
 #include "6DOF_model.hpp"
+#include <iostream>
+#include <cmath>
 
+DynamicsModel::DynamicsModel(const libconfig::Config& config, const std::string& model_name) {
+    // Load parameters from the configuration object
+    const libconfig::Setting& root = config.getRoot();
 
-// Moment of inertia matrix = moment of inertia for rigid body + added mass moment of inertia
-auto GetM(double mass, const Eigen::Vector3d& centerOfGravity, const Eigen::Matrix3d& inertiaMatrix,
-          const Eigen::Matrix<double, 6, 1>& addedMassDiagonal) -> Eigen::Matrix<double, 6, 6> {
-    Eigen::Matrix<double, 6, 6> rigidBodyMassMatrix, addedMassMatrix, totalMassMatrix;
+    try {
+        const libconfig::Setting& model = root.lookup(model_name);
 
-    // Adding mass matrix
-    addedMassMatrix.setZero();
-    addedMassMatrix.diagonal() = -addedMassDiagonal;
+        // Load mass
+        model.lookupValue("mass", mass_);
 
-    // Inertia tensor
-    Eigen::Matrix3d skewCenterOfGravity;
-    skewCenterOfGravity << 0, -centerOfGravity.z(), centerOfGravity.y(),
-                           centerOfGravity.z(), 0, -centerOfGravity.x(),
-                           -centerOfGravity.y(), centerOfGravity.x(), 0;
+        // Load buoyancy
+        model.lookupValue("buoyancy", buoyancy_);
 
-    // Rigid body mass matrix
-    rigidBodyMassMatrix.setZero();
-    rigidBodyMassMatrix.block(0, 0, 3, 3) = mass * Eigen::Matrix3d::Identity();
-    rigidBodyMassMatrix.block(0, 3, 3, 3) = -mass * skewCenterOfGravity;
-    rigidBodyMassMatrix.block(3, 0, 3, 3) = mass * skewCenterOfGravity;
-    rigidBodyMassMatrix.block(3, 3, 3, 3) = inertiaMatrix;
+        // Load center of gravity
+        const libconfig::Setting& cog = model["center_of_gravity"];
+        centerOfGravity_ = Eigen::Vector3d(cog[0], cog[1], cog[2]);
 
-    // Total mass matrix
-    totalMassMatrix = rigidBodyMassMatrix + addedMassMatrix;
-    return totalMassMatrix;
+        // Load inertia tensor
+        const libconfig::Setting& inertia = model["inertia_tensor"];
+        inertiaTensor_ = Eigen::Matrix3d::Zero();
+        inertiaTensor_(0, 0) = inertia[0];
+        inertiaTensor_(1, 1) = inertia[1];
+        inertiaTensor_(2, 2) = inertia[2];
+
+        // Load gravity vector
+        const libconfig::Setting& gravity = model["gravity_vector"];
+        gravityVector_ = Eigen::Vector3d(gravity[0], gravity[1], gravity[2]);
+
+        // Load center of buoyancy
+        const libconfig::Setting& cob = model["center_of_buoyancy"];
+        centerOfBuoyancy_ = Eigen::Vector3d(cob[0], cob[1], cob[2]);
+
+        // Load added mass
+        const libconfig::Setting& addedMass = model["added_mass"];
+        addedMassDiagonal_ = Eigen::Matrix<double, 6, 1>::Zero();
+        for (int i = 0; i < 6; ++i) {
+            addedMassDiagonal_(i) = addedMass[i];
+        }
+
+        // Load damping coefficients
+        const libconfig::Setting& dampingCoefficients = model["damping_coefficients"];
+        dampingCoefficients_ = Eigen::Matrix<double, 6, 1>::Zero();
+        for (int i = 0; i < 6; ++i) {
+            dampingCoefficients_(i) = dampingCoefficients[i];
+        }
+
+        // Load thruster upper and lower limits
+        const libconfig::Setting& upperLimits = model["thruster_upper_limits"];
+        const libconfig::Setting& lowerLimits = model["thruster_lower_limits"];
+        int numThrusters = upperLimits.getLength();
+        thrusterUpperLimits_ = Eigen::VectorXd(numThrusters);
+        thrusterLowerLimits_ = Eigen::VectorXd(numThrusters);
+        for (int i = 0; i < numThrusters; ++i) {
+            thrusterUpperLimits_(i) = upperLimits[i];
+            thrusterLowerLimits_(i) = lowerLimits[i];
+        }
+
+        // Load thruster allocation weights
+        const libconfig::Setting& allocationWeights = model["thruster_allocation_weights"];
+        thrusterAllocationWeights_ = Eigen::VectorXd(numThrusters);
+        for (int i = 0; i < numThrusters; ++i) {
+            thrusterAllocationWeights_(i) = allocationWeights[i];
+        }
+
+        // Load thruster positions
+        const libconfig::Setting& positions = model["thruster_positions"];
+        int numPositions = positions.getLength();
+        thrusterPositions_.resize(numPositions / 3, 3);
+        for (int i = 0; i < numPositions / 3; ++i) {
+            thrusterPositions_(i, 0) = positions[i * 3];
+            thrusterPositions_(i, 1) = positions[i * 3 + 1];
+            thrusterPositions_(i, 2) = positions[i * 3 + 2];
+        }
+
+        // Load thruster orientations
+        const libconfig::Setting& orientations = model["thruster_orientations_degrees"];
+        int numOrientations = orientations.getLength();
+        thrusterOrientations_.resize(numOrientations / 3, 3);
+        for (int i = 0; i < numOrientations / 3; ++i) {
+            double angle0 = orientations[i * 3];
+            double angle1 = orientations[i * 3 + 1];
+            double angle2 = orientations[i * 3 + 2];
+
+            thrusterOrientations_(i, 0) = angle0 * M_PI / 180.0; // Convert to radians
+            thrusterOrientations_(i, 1) = angle1 * M_PI / 180.0;
+            thrusterOrientations_(i, 2) = angle2 * M_PI / 180.0;
+        }
+
+        // Compute the thrusters wrench matrix
+        ComputeThrustersWrenchMatrix();
+
+    } catch (const libconfig::SettingNotFoundException& nfex) {
+        std::cerr << "Setting not found: " << nfex.getPath() << std::endl;
+        throw;
+    } catch (const libconfig::SettingTypeException& stex) {
+        std::cerr << "Setting has wrong type: " << stex.getPath() << std::endl;
+        throw;
+    }
 }
 
-// Coriolis and centripetal matrix = Coriolis and centripetal matrix for rigid body + added mass Coriolis and centripetal matrix
-auto GetC(const Eigen::Matrix<double, 6, 1>& relativeVelocity, double mass, const Eigen::Vector3d& centerOfGravity,
-                    const Eigen::Matrix3d& inertiaMatrix0) -> Eigen::Matrix<double, 6, 6> {
-    Eigen::Vector3d angularVelocity = relativeVelocity.segment(3, 3);
-    Eigen::Matrix<double, 6, 6> rigidBodyCoriolisMatrix, addedMassCoriolisMatrix, totalCoriolisMatrix;
+void DynamicsModel::ComputeThrustersWrenchMatrix() {
+    // Number of thrusters
+    int numThrusters = thrusterPositions_.rows();
 
-    // Skew matrix for angular velocity
-    Eigen::Matrix3d skewAngularVelocity;
-    skewAngularVelocity << 0, -angularVelocity.z(), angularVelocity.y(),
-                            angularVelocity.z(), 0, -angularVelocity.x(),
-                            -angularVelocity.y(), angularVelocity.x(), 0;
-
-    // Skew matrix for center of gravity
-    Eigen::Matrix3d skewCenterOfGravity;
-    skewCenterOfGravity << 0, -centerOfGravity.z(), centerOfGravity.y(),
-                            centerOfGravity.z(), 0, -centerOfGravity.x(),
-                            -centerOfGravity.y(), centerOfGravity.x(), 0;
-
-    // Rigid body Coriolis and centripetal matrix
-    rigidBodyCoriolisMatrix.setZero();
-    rigidBodyCoriolisMatrix.block(0, 0, 3, 3) = mass * skewAngularVelocity;
-    rigidBodyCoriolisMatrix.block(0, 3, 3, 3) = -(mass * skewAngularVelocity) * skewCenterOfGravity;
-    rigidBodyCoriolisMatrix.block(3, 0, 3, 3) = (mass * skewCenterOfGravity) * skewAngularVelocity;
-
-    // Correcting the assignment to use a skew-symmetric matrix from inertiaMatrix0 * angularVelocity
-    Eigen::Vector3d inertiaVelocity = inertiaMatrix0 * angularVelocity;
-    Eigen::Matrix3d skewInertiaVelocity;
-    skewInertiaVelocity << 0, -inertiaVelocity.z(), inertiaVelocity.y(),
-                            inertiaVelocity.z(), 0, -inertiaVelocity.x(),
-                            -inertiaVelocity.y(), inertiaVelocity.x(), 0;
-    rigidBodyCoriolisMatrix.block(3, 3, 3, 3) = -skewInertiaVelocity;
-
-    // Added mass Coriolis and centripetal matrix (simplified for explanation)
-    addedMassCoriolisMatrix.setZero();
-
-    totalCoriolisMatrix = rigidBodyCoriolisMatrix + addedMassCoriolisMatrix;
-    return totalCoriolisMatrix;
-}
-
-// Damping matrix = damping matrix for rigid body + added mass damping matrix
-auto  GetD(const Eigen::Matrix<double, 6, 1>& relativeVelocity,
-                    const Eigen::Matrix<double, 6, 1>& dampingDiagonal) -> Eigen::Matrix<double, 6, 6> {
-    Eigen::Matrix<double, 6, 6> dampingMatrix;
-    dampingMatrix.setZero();
-    dampingMatrix.diagonal() = (dampingDiagonal.array() * relativeVelocity.cwiseAbs().array()).matrix();
-    return dampingMatrix;
-}
-
-// Gravitational and buoyancy forces and moments
-auto GetG(const Eigen::Matrix<double, 6, 1>& pose, double mass, double buoyancyForce,
-                    const Eigen::Vector3d& gravity, const Eigen::Vector3d& centerOfGravity,
-                    const Eigen::Vector3d& centerOfBuoyancy) -> Eigen::Matrix<double, 6, 1> {
-    double roll = pose(3), pitch = pose(4), yaw = pose(5);
-
-    // Convert Euler angles (roll, pitch, yaw) to rotation matrix
-    Eigen::Matrix3d bodyF_R_worldF = (Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()) *
-                                        Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY()) *
-                                        Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX())).toRotationMatrix();
-
-    Eigen::Vector3d gravitationalForce = mass * gravity;
-    Eigen::Vector3d buoyancy = -buoyancyForce * Eigen::Vector3d::UnitZ();
-
-    Eigen::Matrix3d worldF_R_bodyF = bodyF_R_worldF.transpose();
-    Eigen::Vector3d worldF_force = gravitationalForce + buoyancy;
-    Eigen::Vector3d bodyF_force = worldF_R_bodyF * worldF_force;
-    Eigen::Vector3d bodyF_moment = centerOfGravity.cross(bodyF_R_worldF * gravitationalForce) +
-                                    centerOfBuoyancy.cross(bodyF_R_worldF * buoyancy);
-
-    Eigen::Matrix<double, 6, 1> result;
-    result << bodyF_force, bodyF_moment;
-    return result;
-}
-
-// Thrusters wrench matrix
-auto GetThrustersWrenchMatrix(const Eigen::MatrixXd& thrusterPositions, const Eigen::MatrixXd& thrusterOrientations) -> Eigen::MatrixXd {
-    auto eulerToRotationMatrix = [](const Eigen::Vector3d& euler) -> Eigen::Matrix3d {
-        Eigen::Quaternion<double> q =
-            Eigen::AngleAxisd(euler[2], Eigen::Vector3d::UnitZ()) *
-            Eigen::AngleAxisd(euler[1], Eigen::Vector3d::UnitY()) *
-            Eigen::AngleAxisd(euler[0], Eigen::Vector3d::UnitX());
-        return q.toRotationMatrix();
-    };
-
-    int numThrusters = thrusterPositions.rows();
-    Eigen::MatrixXd wrenchMatrix(6, numThrusters);
+    // Initialize the wrench matrix
+    thrustersWrenchMatrix_.resize(6, numThrusters);
 
     for (int i = 0; i < numThrusters; ++i) {
-        Eigen::Matrix3d thrusterRotation = eulerToRotationMatrix(thrusterOrientations.row(i).transpose());
+        // For each thruster
+        // Get the orientation
+        Eigen::Vector3d orientation = thrusterOrientations_.row(i);
+
+        // Convert Euler angles to rotation matrix
+        Eigen::Matrix3d rotationMatrix;
+        rotationMatrix = (Eigen::AngleAxisd(orientation[2], Eigen::Vector3d::UnitZ())
+                         * Eigen::AngleAxisd(orientation[1], Eigen::Vector3d::UnitY())
+                         * Eigen::AngleAxisd(orientation[0], Eigen::Vector3d::UnitX())).toRotationMatrix();
+
+        // Assume the thrust direction is along the x-axis in the thruster's frame
         Eigen::Vector3d baseDirection(1, 0, 0);
-        Eigen::Vector3d unitVector = thrusterRotation * baseDirection.normalized();
-        Eigen::Vector3d thrusterPosition = thrusterPositions.row(i);
+
+        // Compute the unit vector of thrust in the vehicle frame
+        Eigen::Vector3d unitVector = rotationMatrix * baseDirection;
+
+        // Get the thruster position
+        Eigen::Vector3d thrusterPosition = thrusterPositions_.row(i);
+
+        // Compute the moment arm
         Eigen::Vector3d moment = thrusterPosition.cross(unitVector);
-        wrenchMatrix.block<3, 1>(0, i) = unitVector; // Force component
-        wrenchMatrix.block<3, 1>(3, i) = moment;     // Moment component
+
+        // Set the wrench matrix
+        thrustersWrenchMatrix_.block<3, 1>(0, i) = unitVector; // Force component
+        thrustersWrenchMatrix_.block<3, 1>(3, i) = moment;     // Moment component
     }
-    return wrenchMatrix;
 }
 
-// Compute the forces for a system using optimization
-auto GetForces(const Eigen::MatrixXd& A, const Eigen::MatrixXd& b, const Eigen::MatrixXd& upLowBounds, const Eigen::VectorXd& weights) -> Eigen::VectorXd {
-    int numVars = A.cols();
-    Eigen::MatrixXd H = weights.asDiagonal();
-    Eigen::VectorXd f = Eigen::VectorXd::Zero(numVars);
-    Eigen::VectorXd lb = upLowBounds.col(0);
-    Eigen::VectorXd ub = upLowBounds.col(1);
-    Eigen::VectorXd lbA = b.cast<double>();
-    Eigen::VectorXd ubA = b.cast<double>();
-    qpOASES::SQProblem problem(numVars, A.rows(), qpOASES::HST_POSDEF);
+void DynamicsModel::UpdateModel(const Eigen::Matrix<double, 6, 1>& velocity, const Eigen::Matrix<double, 6, 1>& pose) {
+    velocity_ = velocity;
 
-    qpOASES::Options options;
-    options.enableRegularisation = qpOASES::BT_TRUE;
-    options.terminationTolerance = 1e-6;
-    options.boundTolerance = 1e-6;
-    options.printLevel = qpOASES::PL_NONE;
-    problem.setOptions(options);
+    // Compute M_ = M_RB + M_A
+    // Rigid body mass matrix M_RB
+    Eigen::Matrix<double, 6, 6> M_RB;
+    M_RB.setZero();
 
-    qpOASES::int_t nWSR = 10000;
+    // Mass
+    M_RB.block<3, 3>(0, 0) = mass_ * Eigen::Matrix3d::Identity();
 
-    qpOASES::real_t* H_d = ConvertEigenToQpOASESArray(H);
-    qpOASES::real_t* f_d = ConvertEigenToQpOASESArray(f);
-    qpOASES::real_t* A_d = ConvertEigenToQpOASESArray(A);
-    qpOASES::real_t* lb_d = ConvertEigenToQpOASESArray(lb);
-    qpOASES::real_t* ub_d = ConvertEigenToQpOASESArray(ub);
-    qpOASES::real_t* lbA_d = ConvertEigenToQpOASESArray(lbA);
-    qpOASES::real_t* ubA_d = ConvertEigenToQpOASESArray(ubA);
+    // Skew-symmetric matrix of center of gravity
+    Eigen::Matrix3d S_r_G = SkewSymmetric(centerOfGravity_);
 
-    Eigen::VectorXd x(numVars);
-    if (problem.init(H_d, f_d, A_d, lb_d, ub_d, lbA_d, ubA_d, nWSR) == qpOASES::SUCCESSFUL_RETURN) {
-        problem.getPrimalSolution(x.data());
-    } else {
-        Eigen::MatrixXd A_copy = A;
-        double* thrustersWrenchMatrixData = A_copy.data();
-        int rows = A.rows();
-        int cols = A.cols();
-        double* TWPInv = new double[cols * rows];
-        double thresholdTW = 1e-4;
-        double lambdaTW = 1e-2;
-        double prodTW;
-        int flagTW;
+    // Off-diagonal blocks
+    M_RB.block<3, 3>(0, 3) = -mass_ * S_r_G;
+    M_RB.block<3, 3>(3, 0) = mass_ * S_r_G;
 
-        rml::GT_RegPinv(thrustersWrenchMatrixData, rows, cols, TWPInv, thresholdTW, lambdaTW, &prodTW, &flagTW);
-        Eigen::Map<Eigen::MatrixXd> TWPInvMatrix(TWPInv, cols, rows);
-        x = TWPInvMatrix * b;
-        delete[] TWPInv;
-    }
+    // Inertia tensor (assuming about center of gravity)
+    M_RB.block<3, 3>(3, 3) = inertiaTensor_;
 
-    delete[] H_d;
-    delete[] f_d;
-    delete[] A_d;
-    delete[] lb_d;
-    delete[] ub_d;
-    delete[] lbA_d;
-    delete[] ubA_d;
+    // Added mass matrix M_A (diagonal)
+    Eigen::Matrix<double, 6, 6> M_A = Eigen::Matrix<double, 6, 6>::Zero();
+    M_A.diagonal() = -addedMassDiagonal_;
 
-    double scaleDown = 1.0;
-    for (int i = 0; i < numVars; ++i) {
-        if (x[i] > ub[i]) {
-            scaleDown = std::min(scaleDown, ub[i] / x[i]);
-        }
-        if (x[i] < lb[i]) {
-            scaleDown = std::min(scaleDown, lb[i] / x[i]);
-        }
-    }
+    // Total mass matrix
+    M_ = M_RB + M_A;
 
-    if (scaleDown < 1.0) {
-        x *= scaleDown;
-    }
+    // Compute C_
+    // Extract velocities
+    Eigen::Vector3d linearVelocity = velocity.segment<3>(0);
+    Eigen::Vector3d angularVelocity = velocity.segment<3>(3);
 
-    for (int i = 0; i < numVars; ++i) {
-        x[i] = std::max(lb[i], std::min(x[i], ub[i]));
-    }
-    return x;
+    // Compute skew-symmetric matrices
+    Eigen::Matrix3d S_omega = SkewSymmetric(angularVelocity);
+
+    // Compute C_RB
+    Eigen::Matrix<double, 6, 6> C_RB;
+    C_RB.setZero();
+
+    // Mass * skew(velocity)
+    C_RB.block<3, 3>(0, 0) = mass_ * S_omega;
+
+    // mass * skew(omega) * skew(r_G)
+    C_RB.block<3, 3>(0, 3) = -mass_ * S_omega * S_r_G;
+
+    // mass * skew(r_G) * skew(omega)
+    C_RB.block<3, 3>(3, 0) = mass_ * S_r_G * S_omega;
+
+    // Skew(I * omega)
+    Eigen::Vector3d I_omega = inertiaTensor_ * angularVelocity;
+    Eigen::Matrix3d S_Iomega = SkewSymmetric(I_omega);
+
+    C_RB.block<3, 3>(3, 3) = -S_Iomega;
+
+    // For the added mass Coriolis matrix C_A, we'll assume it's negligible
+    // Total Coriolis matrix
+    C_ = C_RB;
+
+    // Compute D_
+    D_.setZero();
+    D_.diagonal() = (dampingCoefficients_.array() * velocity.array().abs()).matrix();
+
+    // Compute G_
+    // Extract orientation angles
+    double roll = pose(3);
+    double pitch = pose(4);
+    double yaw = pose(5);
+
+    // Compute rotation matrix from body to inertial frame
+    Eigen::Matrix3d R = (Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ())
+                        * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
+                        * Eigen::AngleAxisd(roll, Eigen::Vector3d::UnitX())).toRotationMatrix();
+
+    // Compute gravity force in inertial frame
+    Eigen::Vector3d gravityForce = mass_ * gravityVector_;
+    Eigen::Vector3d buoyancyForceVec = -buoyancy_ * Eigen::Vector3d::UnitZ();
+
+    // Transform to body frame
+    Eigen::Vector3d totalForceBody = R.transpose() * (gravityForce + buoyancyForceVec);
+
+    // Compute moments due to gravity and buoyancy
+    Eigen::Vector3d momentGravity = centerOfGravity_.cross(R.transpose() * gravityForce);
+    Eigen::Vector3d momentBuoyancy = centerOfBuoyancy_.cross(R.transpose() * buoyancyForceVec);
+    Eigen::Vector3d totalMomentBody = momentGravity + momentBuoyancy;
+
+    // Assemble G_
+    G_.segment<3>(0) = totalForceBody;
+    G_.segment<3>(3) = totalMomentBody;
 }
 
-// Compute the acceleration for a system
-void GetAcceleration(const Eigen::MatrixXd& M, const Eigen::Matrix<double, 6, 1>& tau, Eigen::Matrix<double, 6, 1>& acceleration) {
-    int rows = M.rows();
-    int cols = M.cols();
-    std::vector<double> M_copy(M.data(), M.data() + M.size());
-    double* M_data = M_copy.data();
-    double* JPInv = new double[cols * rows];
-    double threshold = 1e-6;
-    double lambda = 1e-4;
-    double prod;
-    int flag;
+Eigen::Matrix<double, 6, 1> DynamicsModel::ComputeAcceleration(const Eigen::VectorXd& forces) {
+    // Compute the net generalized forces
+    Eigen::Matrix<double, 6, 1> tau = thrustersWrenchMatrix_ * forces;
 
-    rml::GT_RegPinv(M_data, rows, cols, JPInv, threshold, lambda, &prod, &flag);
-    Eigen::Map<Eigen::MatrixXd> MInv(JPInv, cols, rows);
-    acceleration = MInv * tau;
-    delete[] JPInv;
+    // Compute the right-hand side
+    Eigen::Matrix<double, 6, 1> rhs = tau - (C_ * velocity_ + D_ * velocity_ + G_);
+
+    // Solve for acceleration: M_ * acceleration = rhs
+    Eigen::Matrix<double, 6, 1> acceleration = M_.ldlt().solve(rhs);
+
+    return acceleration;
+}
+
+Eigen::Matrix3d DynamicsModel::SkewSymmetric(const Eigen::Vector3d& vec) {
+    Eigen::Matrix3d skew;
+    skew <<     0, -vec(2),  vec(1),
+             vec(2),      0, -vec(0),
+            -vec(1),  vec(0),      0;
+    return skew;
+}
+
+std::size_t DynamicsModel::GetNumThrusters() const {
+    return static_cast<std::size_t>(thrustersWrenchMatrix_.cols());
 }
