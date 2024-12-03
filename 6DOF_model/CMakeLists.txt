@@ -22,9 +22,6 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES .so .a)
 # Find qpOASES shared library
 find_library(QPOASES_LIBRARY NAMES qpOASES REQUIRED)
 
-# Output the found qpOASES library
-message(STATUS "Found QPOASES_LIBRARY: ${QPOASES_LIBRARY}")
-
 # Define the 6DOF_model library
 add_library(${PROJECT_NAME} SHARED
   src/6DOF_model.cpp
