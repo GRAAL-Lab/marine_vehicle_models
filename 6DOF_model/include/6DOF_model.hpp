@@ -6,6 +6,9 @@
 #include <libconfig.h++>
 #include <rml/RML.h>
 #include <cmath>
+#include <iostream>
+
+namespace SixDOF {
 
 /**
  * @class DynamicsModel
@@ -136,37 +139,12 @@ private:
 
     // Private helper methods
     /**
-     * @brief Compute the combined mass matrix (`M`).
-     * Includes both rigid body inertia and added mass effects.
-     */
-    void UpdateMassMatrix();
-
-    /**
-     * @brief Compute the Coriolis and centripetal matrix (`C`).
-     * Accounts for velocity-dependent forces and moments.
-     * @param angularVelocity The angular velocity vector `[p, q, r]`.
-     */
-    void UpdateCoriolisMatrix(const Eigen::Vector3d& angularVelocity);
-
-    /**
-     * @brief Compute the hydrodynamic damping matrix (`D`).
-     * Accounts for drag forces and moments.
-     * @param velocity The body-fixed velocity vector.
-     */
-    void UpdateDampingMatrix(const Eigen::Matrix<double, 6, 1>& velocity);
-
-    /**
-     * @brief Compute the restoring forces and moments (`g`).
-     * Accounts for gravity and buoyancy effects.
-     * @param pose The body-fixed pose vector `[x, y, z, roll, pitch, yaw]`.
-     */
-    void UpdateGravityMatrix(const Eigen::Matrix<double, 6, 1>& pose);
-
-    /**
      * @brief Generate the thrusters wrench matrix (`W`).
      * Maps individual thruster forces to the vehicle's generalized forces and moments.
      */
     void ComputeThrustersWrenchMatrix();
 };
+
+} // namespace SixDOF
 
 #endif // DYNAMICS_MODEL_HPP

@@ -1,5 +1,7 @@
 #include "6DOF_model.hpp"
 
+namespace SixDOF {
+
 DynamicsModel::DynamicsModel(const libconfig::Config& config, const std::string& model_name) {
     // Load parameters from the configuration object
     const libconfig::Setting& root = config.getRoot();
@@ -103,7 +105,6 @@ void DynamicsModel::ComputeThrustersWrenchMatrix() {
     }
 }
 
-
 void DynamicsModel::UpdateModel(const Eigen::Matrix<double, 6, 1>& velocity, const Eigen::Matrix<double, 6, 1>& pose) {
     // velocity: [u, v, w, p, q, r] in BODY frame
     // pose:     [x, y, z, roll, pitch, yaw] in WORLD frame
@@ -112,7 +113,7 @@ void DynamicsModel::UpdateModel(const Eigen::Matrix<double, 6, 1>& velocity, con
     // --- Update Mass Matrix ---
     Eigen::Matrix<double, 6, 6> massMatrix_RB = Eigen::Matrix<double, 6, 6>::Zero();
     massMatrix_RB.block<3, 3>(0, 0) = mass_ * Eigen::Matrix3d::Identity();
-    massMatrix_RB.block<3, 3>(0, 3) = -mass_ * rml::Vect3ToSkew(centerOfGravity_);
+    massMatrix_RB.block<3, 3>(0, 3) = -rml::Vect3ToSkew(centerOfGravity_);
     massMatrix_RB.block<3, 3>(3, 3) = inertiaTensor_;
     massMatrix_ = massMatrix_RB - addedMassDiagonal_.asDiagonal().toDenseMatrix();
 
@@ -175,3 +176,5 @@ const Eigen::Matrix<double, 6, 6>& DynamicsModel::GetDampingMatrix() const {
 const Eigen::Matrix<double, 6, 1>& DynamicsModel::GetRestoringForces() const {
     return restoringForces_;
 }
+
+} // namespace SixDOF
