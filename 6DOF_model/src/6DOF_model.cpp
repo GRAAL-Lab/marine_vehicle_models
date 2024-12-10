@@ -46,7 +46,6 @@ DynamicsModel::DynamicsModel(const libconfig::Config& config, const std::string&
             dampingCoefficients_(i) = dampingCoefficients[i];
         }
 
-
         // Load thruster positions
         const libconfig::Setting& positions = model["thruster_positions"];
         int numPositions = positions.getLength();
@@ -105,30 +104,31 @@ void DynamicsModel::ComputeThrustersWrenchMatrix() {
 }
 
 
-void DynamicsModel::UpdateMassMatrix() {
+void DynamicsModel::UpdateModel(const Eigen::Matrix<double, 6, 1>& velocity, const Eigen::Matrix<double, 6, 1>& pose) {
+    // velocity: [u, v, w, p, q, r] in BODY frame
+    // pose:     [x, y, z, roll, pitch, yaw] in WORLD frame
+    velocity_ = velocity;
+
+    // --- Update Mass Matrix ---
     Eigen::Matrix<double, 6, 6> massMatrix_RB = Eigen::Matrix<double, 6, 6>::Zero();
     massMatrix_RB.block<3, 3>(0, 0) = mass_ * Eigen::Matrix3d::Identity();
-    massMatrix_RB.block<3, 3>(0, 3) = -mass_ * SkewSymmetric(centerOfGravity_);
+    massMatrix_RB.block<3, 3>(0, 3) = -mass_ * rml::Vect3ToSkew(centerOfGravity_);
     massMatrix_RB.block<3, 3>(3, 3) = inertiaTensor_;
     massMatrix_ = massMatrix_RB - addedMassDiagonal_.asDiagonal().toDenseMatrix();
 
-}
-
-void DynamicsModel::UpdateCoriolisMatrix(const Eigen::Vector3d& angularVelocity) {
-    Eigen::Matrix3d S_omega = SkewSymmetric(angularVelocity);
-    Eigen::Matrix3d S_r_G = SkewSymmetric(centerOfGravity_);
+    // --- Update Coriolis Matrix ---
+    Eigen::Matrix3d S_omega = rml::Vect3ToSkew(velocity_.tail<3>());
+    Eigen::Matrix3d S_r_G = rml::Vect3ToSkew(centerOfGravity_);
     Eigen::Matrix<double, 6, 6> coriolisMatrix_RB = Eigen::Matrix<double, 6, 6>::Zero();
     coriolisMatrix_RB.block<3, 3>(0, 0) = mass_ * S_omega;
     coriolisMatrix_RB.block<3, 3>(0, 3) = -mass_ * S_omega * S_r_G;
-    coriolisMatrix_RB.block<3, 3>(3, 3) = -SkewSymmetric(inertiaTensor_ * angularVelocity);
+    coriolisMatrix_RB.block<3, 3>(3, 3) = -rml::Vect3ToSkew(inertiaTensor_ * velocity_.tail<3>());
     coriolisMatrix_ = coriolisMatrix_RB;
-}
 
-void DynamicsModel::UpdateDampingMatrix(const Eigen::Matrix<double, 6, 1>& velocity) {
-    dampingMatrix_ = dampingCoefficients_.cwiseProduct(velocity.cwiseAbs()).asDiagonal();
-}
+    // --- Update Damping Matrix ---
+    dampingMatrix_ = dampingCoefficients_.cwiseProduct(velocity_.cwiseAbs()).asDiagonal();
 
-void DynamicsModel::UpdateGravityMatrix(const Eigen::Matrix<double, 6, 1>& pose) {
+    // --- Update Gravity Matrix ---
     Eigen::Matrix3d R = (Eigen::AngleAxisd(pose(5), Eigen::Vector3d::UnitZ())
                   * Eigen::AngleAxisd(pose(4), Eigen::Vector3d::UnitY())
                   * Eigen::AngleAxisd(pose(3), Eigen::Vector3d::UnitX())).toRotationMatrix();
@@ -139,35 +139,12 @@ void DynamicsModel::UpdateGravityMatrix(const Eigen::Matrix<double, 6, 1>& pose)
                  + centerOfBuoyancy_.cross(R.transpose() * buoyancyForce);
 }
 
-
-
-
-void DynamicsModel::UpdateActualModel(const Eigen::Matrix<double, 6, 1>& velocityActual, const Eigen::Matrix<double, 6, 1>& poseActual) {
-    velocityActual_ = velocityActual;
-    UpdateMassMatrix();
-    UpdateCoriolisMatrix(velocityActual.tail<3>());
-    UpdateDampingMatrix(velocityActual);
-    UpdateGravityMatrix(poseActual);
-}
-
-Eigen::Matrix<double, 6, 1> DynamicsModel::ComputeDesiredModel(const Eigen::Matrix<double, 6, 1>& accelerationDesired,
-                                       const Eigen::Matrix<double, 6, 1>& velocityDesired,
-                                       const Eigen::Matrix<double, 6, 1>& poseDesired) {
-    UpdateMassMatrix();
-    UpdateCoriolisMatrix(velocityDesired.tail<3>());
-    UpdateDampingMatrix(velocityDesired);
-    UpdateGravityMatrix(poseDesired);
-    UpdateActualModel(velocityDesired, poseDesired);
-    return  (massMatrix_ * accelerationDesired + coriolisMatrix_ * velocityDesired + dampingMatrix_ * velocityDesired + restoringForces_);
-}
-
-
 Eigen::Matrix<double, 6, 1> DynamicsModel::ComputeAcceleration(const Eigen::VectorXd& forces) {
     // Compute the net generalized forces
     Eigen::Matrix<double, 6, 1> tau = thrustersWrenchMatrix_ * forces;
 
     // Compute the right-hand side
-    Eigen::Matrix<double, 6, 1> rhs = tau - (coriolisMatrix_ * velocityActual_ + dampingMatrix_ * velocityActual_ + restoringForces_);
+    Eigen::Matrix<double, 6, 1> rhs = tau - (coriolisMatrix_ * velocity_ + dampingMatrix_ * velocity_ + restoringForces_);
 
     // Solve for acceleration: massMatrix_ * acceleration = rhs
     Eigen::Matrix<double, 6, 1> acceleration = massMatrix_.ldlt().solve(rhs);
@@ -175,19 +152,26 @@ Eigen::Matrix<double, 6, 1> DynamicsModel::ComputeAcceleration(const Eigen::Vect
     return acceleration;
 }
 
-Eigen::Matrix3d DynamicsModel::SkewSymmetric(const Eigen::Vector3d& vec) {
-    Eigen::Matrix3d skew;
-    skew << 0, -vec.z(), vec.y(),
-            vec.z(), 0, -vec.x(),
-            -vec.y(), vec.x(), 0;
-    return skew;
-}
-
 std::size_t DynamicsModel::GetNumThrusters() const {
     return thrustersWrenchMatrix_.cols();
 }
 
-
 const Eigen::MatrixXd& DynamicsModel::GetThrustersWrenchMatrix() const {
     return thrustersWrenchMatrix_;
+}
+
+const Eigen::Matrix<double, 6, 6>& DynamicsModel::GetMassMatrix() const {
+    return massMatrix_;
+}
+
+const Eigen::Matrix<double, 6, 6>& DynamicsModel::GetCoriolisMatrix() const {
+    return coriolisMatrix_;
+}
+
+const Eigen::Matrix<double, 6, 6>& DynamicsModel::GetDampingMatrix() const {
+    return dampingMatrix_;
+}
+
+const Eigen::Matrix<double, 6, 1>& DynamicsModel::GetRestoringForces() const {
+    return restoringForces_;
 }

@@ -5,7 +5,6 @@
 #include <vector>
 #include <libconfig.h++>
 #include <rml/RML.h>
-#include <iostream>
 #include <cmath>
 
 /**
@@ -13,7 +12,7 @@
  * @brief A class for computing dynamics matrices and forces for underwater vehicles.
  * 
  * This class encapsulates the dynamics of an underwater vehicle based on Fossen's dynamic model.
- * It provides methods to compute the dynamics matrices, vehicle acceleration, and desired forces.
+ * It provides methods to compute the dynamics matrices, vehicle acceleration, and applied forces.
  * 
  * ## Dynamic Model Equation
  * The dynamics are described by:
@@ -44,28 +43,13 @@ public:
     DynamicsModel(const libconfig::Config& config, const std::string& model_name);
 
     /**
-     * @brief Update the model based on actual velocity and pose (for simulation).
+     * @brief Update the model based on current velocity and pose.
      * 
      * Updates the dynamics matrices (`M`, `C`, `D`, and `g`) based on the current velocity and pose.
      * @param velocity The current velocity vector (6-DOF).
      * @param pose The current pose vector (6-DOF).
      */
-
-    void UpdateActualModel(const Eigen::Matrix<double, 6, 1>& velocityActual, const Eigen::Matrix<double, 6, 1>& poseActual);
-
-    /**
-     * @brief Compute the desired model components for control purposes.
-     * 
-     * Computes the dynamics matrices (`M`, `C`, `D`, and `g`) and returns the left-hand side
-     * vector of the dynamic equation based on desired states.
-     * @param accelerationDesired The desired acceleration vector (6-DOF).
-     * @param velocityDesired The desired velocity vector (6-DOF).
-     * @param poseDesired The desired pose vector (6-DOF).
-     * @return The computed LHS vector based on desired dynamics.
-     */
-    Eigen::Matrix<double, 6, 1> ComputeDesiredModel(const Eigen::Matrix<double, 6, 1>& accelerationDesired,
-                                                    const Eigen::Matrix<double, 6, 1>& velocityDesired,
-                                                    const Eigen::Matrix<double, 6, 1>& poseDesired);
+    void UpdateModel(const Eigen::Matrix<double, 6, 1>& velocity, const Eigen::Matrix<double, 6, 1>& pose);
 
     /**
      * @brief Computes the acceleration of the vehicle given the applied forces.
@@ -96,7 +80,30 @@ public:
      * @return A reference to the thrusters wrench matrix.
      */
     const Eigen::MatrixXd& GetThrustersWrenchMatrix() const;
-    
+
+    /**
+     * @brief Get the mass matrix (`M`).
+     * @return A constant reference to the mass matrix.
+     */
+    const Eigen::Matrix<double, 6, 6>& GetMassMatrix() const;
+
+    /**
+     * @brief Get the Coriolis and centripetal matrix (`C`).
+     * @return A constant reference to the Coriolis matrix.
+     */
+    const Eigen::Matrix<double, 6, 6>& GetCoriolisMatrix() const;
+
+    /**
+     * @brief Get the hydrodynamic damping matrix (`D`).
+     * @return A constant reference to the damping matrix.
+     */
+    const Eigen::Matrix<double, 6, 6>& GetDampingMatrix() const;
+
+    /**
+     * @brief Get the restoring forces and moments (`g`).
+     * @return A constant reference to the restoring forces vector.
+     */
+    const Eigen::Matrix<double, 6, 1>& GetRestoringForces() const;
 
 private:
     // Model parameters
@@ -108,7 +115,7 @@ private:
     Eigen::Vector3d gravityVector_;               ///< Gravity vector.
 
     // Velocity
-    Eigen::Matrix<double, 6, 1> velocityActual_;  ///< Actual velocity vector.
+    Eigen::Matrix<double, 6, 1> velocity_;        ///< Velocity vector.
 
     Eigen::Matrix<double, 6, 1> addedMassDiagonal_; ///< Added mass diagonal matrix.
     Eigen::Matrix<double, 6, 1> dampingCoefficients_; ///< Damping coefficients.
@@ -119,13 +126,13 @@ private:
     // Upper and lower bounds for thruster forces
     Eigen::VectorXd thrusterUpperLimits_;         ///< Upper force limits for thrusters.
     Eigen::VectorXd thrusterLowerLimits_;         ///< Lower force limits for thrusters.
-    Eigen::VectorXd thrusterAllocationWeights_;  ///< Weights for thruster allocation.
+    Eigen::VectorXd thrusterAllocationWeights_;   ///< Weights for thruster allocation.
 
     // Dynamics matrices
     Eigen::Matrix<double, 6, 6> massMatrix_;         ///< Mass matrix (`M`).
-    Eigen::Matrix<double, 6, 6> coriolisMatrix_;    ///< Coriolis matrix (`C`).
-    Eigen::Matrix<double, 6, 6> dampingMatrix_;    ///< Damping matrix (`D`).
-    Eigen::Matrix<double, 6, 1> restoringForces_;               ///< Restoring forces (`g`).
+    Eigen::Matrix<double, 6, 6> coriolisMatrix_;     ///< Coriolis matrix (`C`).
+    Eigen::Matrix<double, 6, 6> dampingMatrix_;      ///< Damping matrix (`D`).
+    Eigen::Matrix<double, 6, 1> restoringForces_;    ///< Restoring forces (`g`).
 
     // Private helper methods
     /**
@@ -160,14 +167,6 @@ private:
      * Maps individual thruster forces to the vehicle's generalized forces and moments.
      */
     void ComputeThrustersWrenchMatrix();
-
-    /**
-     * @brief Generate a skew-symmetric matrix for a given vector.
-     * Used for cross-product operations in matrix form.
-     * @param vec The input vector.
-     * @return The skew-symmetric matrix.
-     */
-    Eigen::Matrix3d SkewSymmetric(const Eigen::Vector3d& vec);
 };
 
 #endif // DYNAMICS_MODEL_HPP
