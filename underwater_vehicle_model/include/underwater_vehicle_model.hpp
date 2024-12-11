@@ -6,9 +6,8 @@
 #include <libconfig.h++>
 #include <rml/RML.h>
 #include <cmath>
-#include <iostream>
 
-namespace SixDOF {
+namespace mvm {
 
 /**
  * @class DynamicsModel
@@ -145,6 +144,6 @@ private:
     void ComputeThrustersWrenchMatrix();
 };
 
-} // namespace SixDOF
+} // namespace mvm
 
 #endif // DYNAMICS_MODEL_HPP

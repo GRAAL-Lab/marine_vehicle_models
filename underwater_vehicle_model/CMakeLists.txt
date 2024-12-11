@@ -1,69 +1,54 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(underwater_vehicle_model)
 
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_BUILD_TYPE Debug)
 
+# Compiler-specific options
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(builtin_interfaces REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(rml REQUIRED)
+# Find required dependencies
+find_package(Eigen3 REQUIRED)
+find_package(PkgConfig REQUIRED)
+find_library(RML_LIBRARY NAMES rml)
 
-# Add files in the tree of "Projects" view in QtCreator
-file(GLOB_RECURSE SOURCE_FILES
-    "msg/*.msg"
-    "*.xml"
-    "launch/*.py"
-    "conf/*"
+# Prefer shared libraries over static ones
+set(CMAKE_FIND_LIBRARY_SUFFIXES .so .a)
+
+# Find qpOASES shared library
+find_library(QPOASES_LIBRARY NAMES qpOASES REQUIRED)
+
+# Define the underwater_vehicle_model library
+add_library(${PROJECT_NAME} SHARED
+  src/underwater_vehicle_model.cpp
 )
 
-add_custom_target(.Files. SOURCES ${SOURCE_FILES})
-
-include_directories(
-  include
-  ${rov_msgs_INCLUDE_DIRS}
+# Add dependencies to the underwater_vehicle_model library
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  ${EIGEN3_INCLUDE_DIRS}
+  ${PkgConfig_INCLUDE_DIRS}
 )
 
-
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # uncomment the line when a copyright and license is not present in all source files
-  #set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # uncomment the line when this package is not in a git repo
-  #set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-endif()
-
-
-add_library(underwater_vehicle_model_lib src/underwater_vehicle.cpp)
-target_link_libraries(underwater_vehicle_model_lib rml)
-
-
-# install artifacts
-install(DIRECTORY
-  conf
-  DESTINATION share/${PROJECT_NAME}
+# Link additional libraries
+target_link_libraries(${PROJECT_NAME}
+  ${QPOASES_LIBRARY}
+  ${RML_LIBRARY}
 )
 
-install(
-  DIRECTORY include/
-  DESTINATION include
+# Install include files
+install(DIRECTORY include/
+  DESTINATION include/
 )
 
-install(
-  TARGETS underwater_vehicle_model_lib # foo_bin
+# Install library
+install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
-
-ament_export_include_directories(include)
-ament_export_libraries(underwater_vehicle_model_lib)
-
-ament_package()

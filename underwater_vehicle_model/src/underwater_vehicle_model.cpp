@@ -1,6 +1,6 @@
-#include "6DOF_model.hpp"
+#include "underwater_vehicle_model.hpp"
 
-namespace SixDOF {
+namespace mvm {
 
 DynamicsModel::DynamicsModel(const libconfig::Config& config, const std::string& model_name) {
     // Load parameters from the configuration object
@@ -177,4 +177,4 @@ const Eigen::Matrix<double, 6, 1>& DynamicsModel::GetRestoringForces() const {
     return restoringForces_;
 }
 
-} // namespace SixDOF
+} // namespace mvm

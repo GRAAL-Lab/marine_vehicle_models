@@ -1,4 +1,4 @@
-#include "underwater_vehicle_model/underwater_vehicle.hpp"
+#include "underwater_cabled_model/underwater_cabled_model.hpp"
 #include "rml/RML.h"
 #include <cmath>
 
