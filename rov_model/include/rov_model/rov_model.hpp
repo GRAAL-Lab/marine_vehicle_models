@@ -4,7 +4,7 @@
 #include "libconfig.h++"
 #include "rml/RML.h"
 #include "ctrl_toolbox/HelperFunctions.h"
-#include "underwater_cabled_model/model_data_structs.hpp"
+#include "rov_model/model_data_structs.hpp"
 
 
 class UnderwaterVehicle {

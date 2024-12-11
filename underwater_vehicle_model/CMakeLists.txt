@@ -19,9 +19,6 @@ find_library(RML_LIBRARY NAMES rml)
 # Prefer shared libraries over static ones
 set(CMAKE_FIND_LIBRARY_SUFFIXES .so .a)
 
-# Find qpOASES shared library
-find_library(QPOASES_LIBRARY NAMES qpOASES REQUIRED)
-
 # Define the underwater_vehicle_model library
 add_library(${PROJECT_NAME} SHARED
   src/underwater_vehicle_model.cpp
@@ -37,7 +34,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 # Link additional libraries
 target_link_libraries(${PROJECT_NAME}
-  ${QPOASES_LIBRARY}
   ${RML_LIBRARY}
 )
 

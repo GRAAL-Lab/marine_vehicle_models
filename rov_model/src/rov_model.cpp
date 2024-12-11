@@ -1,4 +1,4 @@
-#include "underwater_cabled_model/underwater_cabled_model.hpp"
+#include "rov_model/rov_model.hpp"
 #include "rml/RML.h"
 #include <cmath>
 

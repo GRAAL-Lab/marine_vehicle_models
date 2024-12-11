@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(underwater_cabled_model)
+project(rov_model)
 
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -41,8 +41,8 @@ if(BUILD_TESTING)
 endif()
 
 
-add_library(underwater_cabled_model_lib src/underwater_cabled_model.cpp)
-target_link_libraries(underwater_cabled_model_lib rml)
+add_library(rov_model_lib src/rov_model.cpp)
+target_link_libraries(rov_model_lib rml)
 
 
 # install artifacts
@@ -57,13 +57,13 @@ install(
 )
 
 install(
-  TARGETS underwater_cabled_model_lib # foo_bin
+  TARGETS rov_model_lib # foo_bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
 ament_export_include_directories(include)
-ament_export_libraries(underwater_cabled_model_lib)
+ament_export_libraries(rov_model_lib)
 
 ament_package()
