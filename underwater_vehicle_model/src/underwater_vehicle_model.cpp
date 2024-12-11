@@ -41,11 +41,18 @@ DynamicsModel::DynamicsModel(const libconfig::Config& config, const std::string&
             addedMassDiagonal_(i) = addedMass[i];
         }
 
-        // Load damping coefficients
-        const libconfig::Setting& dampingCoefficients = model["damping_coefficients"];
-        dampingCoefficients_ = Eigen::Matrix<double, 6, 1>::Zero();
+        // Load damping coefficients linear
+        const libconfig::Setting& dampingLinearCoefficients = model["damping_coefficients_linear"];
+        dampingLinearCoefficients_ = Eigen::Matrix<double, 6, 1>::Zero();
         for (int i = 0; i < 6; ++i) {
-            dampingCoefficients_(i) = dampingCoefficients[i];
+            dampingLinearCoefficients_(i) = dampingLinearCoefficients[i];
+        }
+
+        // Load damping coefficients quadratic
+        const libconfig::Setting& quadraticDampingCoefficients = model["damping_coefficients_quadratic"];
+        dampingQuadraticCoefficients_ = Eigen::Matrix<double, 6, 1>::Zero();
+        for (int i = 0; i < 6; ++i) {
+            dampingQuadraticCoefficients_(i) = quadraticDampingCoefficients[i];
         }
 
         // Load thruster positions
@@ -127,7 +134,15 @@ void DynamicsModel::UpdateModel(const Eigen::Matrix<double, 6, 1>& velocity, con
     coriolisMatrix_ = coriolisMatrix_RB;
 
     // --- Update Damping Matrix ---
-    dampingMatrix_ = dampingCoefficients_.cwiseProduct(velocity_.cwiseAbs()).asDiagonal();
+
+    // Linear damping: proportional to velocity (constant w.r.t. velocity magnitude)
+    // Quadratic damping: proportional to |velocity| * velocity
+
+    Eigen::Matrix<double, 6, 6> dampingLinear = dampingLinearCoefficients_.asDiagonal();
+    Eigen::Matrix<double, 6, 6> dampingQuadtraic = (dampingQuadraticCoefficients_.cwiseProduct(velocity_.cwiseAbs())).asDiagonal();
+
+    // Total damping matrix
+    dampingMatrix_ = dampingLinear + dampingQuadtraic;
 
     // --- Update Gravity Matrix ---
     Eigen::Matrix3d R = (Eigen::AngleAxisd(pose(5), Eigen::Vector3d::UnitZ())

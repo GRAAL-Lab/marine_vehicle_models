@@ -120,7 +120,8 @@ private:
     Eigen::Matrix<double, 6, 1> velocity_;        ///< Velocity vector.
 
     Eigen::Matrix<double, 6, 1> addedMassDiagonal_; ///< Added mass diagonal matrix.
-    Eigen::Matrix<double, 6, 1> dampingCoefficients_; ///< Damping coefficients.
+    Eigen::Matrix<double, 6, 1> dampingLinearCoefficients_; ///< Damping linear coefficients.
+    Eigen::Matrix<double, 6, 1> dampingQuadraticCoefficients_; ///< Damping quadratic coefficients.
     Eigen::MatrixXd thrusterPositions_;           ///< Positions of the thrusters.
     Eigen::MatrixXd thrusterOrientations_;        ///< Orientations of the thrusters.
     Eigen::MatrixXd thrustersWrenchMatrix_;       ///< Wrench matrix for thrusters.
