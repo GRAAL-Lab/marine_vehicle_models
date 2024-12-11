@@ -1,5 +1,5 @@
-#ifndef DYNAMICS_MODEL_HPP
-#define DYNAMICS_MODEL_HPP
+#ifndef UNDERWATER_VEHICLE_MODEL_HPP
+#define UNDERWATER_VEHICLE_MODEL_HPP
 
 #include <Eigen/Dense>
 #include <vector>
@@ -10,7 +10,7 @@
 namespace mvm {
 
 /**
- * @class DynamicsModel
+ * @class UnderwaterVehicleModel
  * @brief A class for computing dynamics matrices and forces for underwater vehicles.
  * 
  * This class encapsulates the dynamics of an underwater vehicle based on Fossen's dynamic model.
@@ -33,7 +33,7 @@ namespace mvm {
  * - `D`: Hydrodynamic damping matrix.
  * - `g`: Restoring forces and moments.
  */
-class DynamicsModel {
+class UnderwaterVehicleModel {
 public:
     /**
      * @brief Constructor that initializes the model parameters from a configuration file.
@@ -42,7 +42,7 @@ public:
      * @param config The libconfig configuration object.
      * @param model_name The name of the model to load from the configuration.
      */
-    DynamicsModel(const libconfig::Config& config, const std::string& model_name);
+    UnderwaterVehicleModel(const libconfig::Config& config, const std::string& model_name);
 
     /**
      * @brief Update the model based on current velocity and pose.
@@ -147,4 +147,4 @@ private:
 
 } // namespace mvm
 
-#endif // DYNAMICS_MODEL_HPP
+#endif // UNDERWATER_VEHICLE_MODEL_HPP

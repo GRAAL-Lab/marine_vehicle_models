@@ -2,7 +2,7 @@
 
 namespace mvm {
 
-DynamicsModel::DynamicsModel(const libconfig::Config& config, const std::string& model_name) {
+UnderwaterVehicleModel::UnderwaterVehicleModel(const libconfig::Config& config, const std::string& model_name) {
     // Load parameters from the configuration object
     const libconfig::Setting& root = config.getRoot();
 
@@ -91,7 +91,7 @@ DynamicsModel::DynamicsModel(const libconfig::Config& config, const std::string&
     }
 }
 
-void DynamicsModel::ComputeThrustersWrenchMatrix() {
+void UnderwaterVehicleModel::ComputeThrustersWrenchMatrix() {
     int numThrusters = thrusterPositions_.rows();
     if (numThrusters == 0) {
         std::cerr << "Error: Thruster positions are not set." << std::endl;
@@ -112,7 +112,7 @@ void DynamicsModel::ComputeThrustersWrenchMatrix() {
     }
 }
 
-void DynamicsModel::UpdateModel(const Eigen::Matrix<double, 6, 1>& velocity, const Eigen::Matrix<double, 6, 1>& pose) {
+void UnderwaterVehicleModel::UpdateModel(const Eigen::Matrix<double, 6, 1>& velocity, const Eigen::Matrix<double, 6, 1>& pose) {
     // velocity: [u, v, w, p, q, r] in BODY frame
     // pose:     [x, y, z, roll, pitch, yaw] in WORLD frame
     velocity_ = velocity;
@@ -155,7 +155,7 @@ void DynamicsModel::UpdateModel(const Eigen::Matrix<double, 6, 1>& velocity, con
                  + centerOfBuoyancy_.cross(R.transpose() * buoyancyForce);
 }
 
-Eigen::Matrix<double, 6, 1> DynamicsModel::ComputeAcceleration(const Eigen::VectorXd& forces) {
+Eigen::Matrix<double, 6, 1> UnderwaterVehicleModel::ComputeAcceleration(const Eigen::VectorXd& forces) {
     // Compute the net generalized forces
     Eigen::Matrix<double, 6, 1> tau = thrustersWrenchMatrix_ * forces;
 
@@ -168,27 +168,27 @@ Eigen::Matrix<double, 6, 1> DynamicsModel::ComputeAcceleration(const Eigen::Vect
     return acceleration;
 }
 
-std::size_t DynamicsModel::GetNumThrusters() const {
+std::size_t UnderwaterVehicleModel::GetNumThrusters() const {
     return thrustersWrenchMatrix_.cols();
 }
 
-const Eigen::MatrixXd& DynamicsModel::GetThrustersWrenchMatrix() const {
+const Eigen::MatrixXd& UnderwaterVehicleModel::GetThrustersWrenchMatrix() const {
     return thrustersWrenchMatrix_;
 }
 
-const Eigen::Matrix<double, 6, 6>& DynamicsModel::GetMassMatrix() const {
+const Eigen::Matrix<double, 6, 6>& UnderwaterVehicleModel::GetMassMatrix() const {
     return massMatrix_;
 }
 
-const Eigen::Matrix<double, 6, 6>& DynamicsModel::GetCoriolisMatrix() const {
+const Eigen::Matrix<double, 6, 6>& UnderwaterVehicleModel::GetCoriolisMatrix() const {
     return coriolisMatrix_;
 }
 
-const Eigen::Matrix<double, 6, 6>& DynamicsModel::GetDampingMatrix() const {
+const Eigen::Matrix<double, 6, 6>& UnderwaterVehicleModel::GetDampingMatrix() const {
     return dampingMatrix_;
 }
 
-const Eigen::Matrix<double, 6, 1>& DynamicsModel::GetRestoringForces() const {
+const Eigen::Matrix<double, 6, 1>& UnderwaterVehicleModel::GetRestoringForces() const {
     return restoringForces_;
 }
 
