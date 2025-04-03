@@ -7,7 +7,7 @@
 #include "rov_model/model_data_structs.hpp"
 
 
-class UnderwaterVehicle {
+class Rov {
 
     /**
      * @brief Class of underwater vehicle model
@@ -48,7 +48,7 @@ public:
     UnderwaterModelParameters params;
     CableParameters Cable_params;
 
-    UnderwaterVehicle();
+    Rov();
     Eigen::Vector3d ComputeCoriolisAndDragForces(Eigen::Vector6d vel);
     double GetThrusterForce(double n, double linXVel);
     double PercentageToRPM(double h);
