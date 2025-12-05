@@ -36,8 +36,7 @@ include_directories(
 add_library(surface_vehicle_model_lib src/surfacevehiclemodel.cpp)
 target_link_libraries(surface_vehicle_model_lib rml)
 
-ament_export_include_directories(include)
-ament_export_libraries(surface_vehicle_model_lib)
+
 
 # install artifacts
 install(DIRECTORY
@@ -51,11 +50,16 @@ install(
 )
 
 install(
-  TARGETS surface_vehicle_model_lib # foo_bin
+  TARGETS surface_vehicle_model_lib
+  EXPORT export_surface_vehicle_model  # <-- Add this line
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
+ament_export_include_directories(include)
+ament_export_libraries(surface_vehicle_model_lib)
+ament_export_dependencies(rclcpp rml)
+ament_export_targets(export_surface_vehicle_model)
 
 ament_package()
