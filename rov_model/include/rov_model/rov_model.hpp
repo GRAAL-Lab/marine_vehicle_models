@@ -34,7 +34,7 @@ class Rov {
     int CircleNumberPerLayer;
     float h; // the vertical distance between two layer
     float h_total;
-    float R; // Spool Radius
+    float R; // current cable winding Radius in mm
     int current_layer;
     int N_layer; // total number of cable layer on the spool
     float winchRPM_;
@@ -87,6 +87,7 @@ public:
     void InitializeMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatrix& worldF_R_bodyF);
     void InitializeCableWinch();
     void RunCableWinch(const float &rpm, float &velocity);
+    void RunCableWinchVelocity(const float &vel);
     void UpdateCableLength(const float &v, const float &dt);
     Eigen::Vector6d VoltageToForces(const Eigen::Vector6d& volt);
 
@@ -101,7 +102,7 @@ public:
     //void SetCablePos_starting(const Eigen::Vector3d &pos);
     //void SetCablePos_ending(const Eigen::Vector3d &pos);
     void SetCableLength(const double &l);
-    void RunCableWinchToReachLength(const float &rpm, float &l, const float &dt);
+    void RunCableWinchToReachLength(const float &rpm, float &l, const float &dt, bool &reached);
 };
 
 #endif // UNDERWATER_VEHICLE_H

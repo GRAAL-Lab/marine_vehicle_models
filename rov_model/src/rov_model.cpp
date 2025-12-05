@@ -423,17 +423,26 @@ void Rov::RunCableWinch(const float &rpm, float &velocity){
     velocity = w * R / 1000;
 }
 
-void Rov::UpdateCableLength(const float &percentage, const float &dt){
-    float w = M_PI/30 * winchRPM_ * percentage;
-    float v = w * R;
+void Rov::RunCableWinchVelocity(const float &vel){
+    float w = 1000*vel/R;
+    float rpm = 30/M_PI * w;
+    if(rpm > Cable_params.winch_rpm)
+        rpm = Cable_params.winch_rpm;
+    winchRPM_ = rpm;
+    //velocity = w * R / 1000;
+}
+
+void Rov::UpdateCableLength(const float &v, const float &dt){
+    //float w = M_PI/30 * winchRPM_ * percentage;
+    //float v = w * R;
     cable_length_released_ = cable_length_released_ + v * dt;
 
     if(cable_length_released_ > Cable_params.length_max)
         cable_length_released_ = Cable_params.length_max;
     else if(cable_length_released_ < Cable_params.length_min)
         cable_length_released_ = Cable_params.length_min;
-    else
-        cable_length_released_ = 0;
+    //else
+    //    cable_length_released_ = 0;
 
     for(int i =0; i < N_layer; i++)
         if(cable_length_released_ > CableLengthThreshold[i]){
@@ -443,8 +452,8 @@ void Rov::UpdateCableLength(const float &percentage, const float &dt){
     R = WindingRadiusPerLayer[current_layer];
 }
 
-void Rov::RunCableWinchToReachLength(const float &rpm, float &l, const float &dt){
-    float precision = 1; float w;
+void Rov::RunCableWinchToReachLength(const float &rpm, float &l, const float &dt, bool &reached){
+    float precision = 0.5; float w;
 
     if(l > Cable_params.length_max)
         l = Cable_params.length_max;
@@ -462,8 +471,12 @@ void Rov::RunCableWinchToReachLength(const float &rpm, float &l, const float &dt
         }
         float v = w * R / 1000;
         UpdateCableLength(v,dt);
+        reached = false;
     }
-    else winchRPM_ =0;
+    else {
+        winchRPM_ = 0;
+        reached = true;
+    }
 
 }
 
