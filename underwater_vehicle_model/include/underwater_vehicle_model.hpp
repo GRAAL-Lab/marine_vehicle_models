@@ -6,6 +6,7 @@
 #include <libconfig.h++>
 #include <rml/RML.h>
 #include <cmath>
+#include <string>
 
 namespace mvm {
 
@@ -43,6 +44,14 @@ public:
      * @param model_name The name of the model to load from the configuration.
      */
     UnderwaterVehicleModel(const libconfig::Config& config, const std::string& model_name);
+    /**
+     * @brief Constructor that initializes the model parameters from a configuration file path.
+     *
+     * Reads the config file at `config_path` and loads the parameters for the specified model.
+     * @param config_path Path to the libconfig configuration file.
+     * @param model_name The name of the model to load from the configuration.
+     */
+    UnderwaterVehicleModel(const std::string& config_path, const std::string& model_name);
 
     /**
      * @brief Update the model based on current velocity and pose.
@@ -108,6 +117,8 @@ public:
     const Eigen::Matrix<double, 6, 1>& GetRestoringForces() const;
 
 private:
+    void LoadFromConfig(const libconfig::Config& config, const std::string& model_name);
+
     // Model parameters
     double mass_;                                  ///< Mass of the vehicle.
     double buoyancy_;                              ///< Buoyancy of the vehicle.
