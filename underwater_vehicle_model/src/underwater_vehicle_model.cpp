@@ -1,8 +1,20 @@
 #include "underwater_vehicle_model.hpp"
 
+#include <iostream>
+
 namespace mvm {
 
 UnderwaterVehicleModel::UnderwaterVehicleModel(const libconfig::Config& config, const std::string& model_name) {
+    LoadFromConfig(config, model_name);
+}
+
+UnderwaterVehicleModel::UnderwaterVehicleModel(const std::string& config_path, const std::string& model_name) {
+    libconfig::Config config;
+    config.readFile(config_path.c_str());
+    LoadFromConfig(config, model_name);
+}
+
+void UnderwaterVehicleModel::LoadFromConfig(const libconfig::Config& config, const std::string& model_name) {
     // Load parameters from the configuration object
     const libconfig::Setting& root = config.getRoot();
 

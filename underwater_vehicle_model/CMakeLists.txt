@@ -14,6 +14,7 @@ endif()
 # Find required dependencies
 find_package(Eigen3 REQUIRED)
 find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBCONFIG REQUIRED libconfig++)
 find_library(RML_LIBRARY NAMES rml)
 
 # Prefer shared libraries over static ones
@@ -30,12 +31,31 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include>
   ${EIGEN3_INCLUDE_DIRS}
   ${PkgConfig_INCLUDE_DIRS}
+  ${LIBCONFIG_INCLUDE_DIRS}
 )
 
 # Link additional libraries
 target_link_libraries(${PROJECT_NAME}
   ${RML_LIBRARY}
+  ${LIBCONFIG_LIBRARIES}
 )
+
+target_compile_options(${PROJECT_NAME} PRIVATE
+  ${LIBCONFIG_CFLAGS_OTHER}
+)
+
+option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
+
+if(BUILD_PYTHON_BINDINGS)
+  find_package(Python COMPONENTS Interpreter Development REQUIRED)
+  find_package(pybind11 REQUIRED)
+  pybind11_add_module(mvm_py
+    src/mvm_py.cpp
+  )
+  target_link_libraries(mvm_py PRIVATE
+    ${PROJECT_NAME}
+  )
+endif()
 
 # Install include files
 install(DIRECTORY include/
