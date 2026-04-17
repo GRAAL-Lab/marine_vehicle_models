@@ -214,3 +214,6 @@ COLCON_IGNORE
 
 ulisse_ctrl/cmake-build-debug/*
 Experiments/*
+
+# vscode stuff
+.vscode/*
