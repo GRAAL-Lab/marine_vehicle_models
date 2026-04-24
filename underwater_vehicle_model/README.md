@@ -15,11 +15,11 @@ To build and use the `UnderwaterVehicleModel` library, ensure the following depe
 
 - [Eigen](https://eigen.tuxfamily.org/) (for linear algebra computations)
 - [libconfig](https://hyperrealm.github.io/libconfig/) (for configuration management)
-- [RML Library](https://bitbucket.org/isme_robotics/rml/src/master/) 
+- [RML Library](https://github.com/GRAAL-Lab/rml)
 
 ### Building the Library
    ```bash
-   git clone https://bitbucket.org/isme_robotics/marine_vehicle_models/src/main/
+   git clone https://github.com/GRAAL-Lab/marine_vehicle_models
    cd marine_vehicle_models/underwater_vehicle_model
    mkdir build && cd build
    cmake ..
