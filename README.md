@@ -18,8 +18,8 @@ The **SurfaceVehicleModel** library implements a 3-DOF planar dynamic model of a
 ### Prerequisites
 - [Eigen](https://eigen.tuxfamily.org/) (linear algebra)
 - [libconfig](https://hyperrealm.github.io/libconfig/) (configuration management)
-- [RML Library](https://bitbucket.org/isme_robotics/rml/src/master/)
-- [ctrl_toolbox](https://bitbucket.org/isme_robotics/ctrl_toolbox/src/master/)
+- [RML Library](https://github.com/GRAAL-Lab/rml)
+- [ctrl_toolbox](https://github.com/GRAAL-Lab/ctrl_toolbox)
 
 ### Building the Library
 ```bash
@@ -49,8 +49,8 @@ The **Rov** library implements a 6-DOF dynamic model of a tethered ROV (e.g. Blu
 ### Prerequisites
 - [Eigen](https://eigen.tuxfamily.org/) (linear algebra)
 - [libconfig](https://hyperrealm.github.io/libconfig/) (configuration management)
-- [RML Library](https://bitbucket.org/isme_robotics/rml/src/master/)
-- [ctrl_toolbox](https://bitbucket.org/isme_robotics/ctrl_toolbox/src/master/)
+- [RML Library](https://github.com/GRAAL-Lab/rml)
+- [ctrl_toolbox](https://github.com/GRAAL-Lab/ctrl_toolbox)
 
 ### Building the Library
 ```bash
