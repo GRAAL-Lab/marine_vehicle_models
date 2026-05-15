@@ -2,8 +2,6 @@
 
 A collection of C++ libraries implementing dynamic models for marine vehicles.
 
----
-
 ## Surface Vehicle Model
 
 The **SurfaceVehicleModel** library implements a 3-DOF planar dynamic model of a surface vehicle propelled by two thrusters (differential-drive / twin-screw configuration), expressed in N.E.D. (North–East–Down) coordinates.
