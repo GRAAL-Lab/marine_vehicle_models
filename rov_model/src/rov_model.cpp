@@ -486,7 +486,7 @@ void Rov::UpdateMatrices(const Eigen::Vector6d &v_rel, const Eigen::RotationMatr
     bodyF_g = ComputeG_bodyF(worldF_R_bodyF);
 }
 
-Eigen::VectorXd Rov::ThusterAllocation(const Eigen::Vector6d &tau){ // not needed anymore (functions moved to dynamic controller)
+Eigen::VectorXd Rov::ThrusterAllocation(const Eigen::Vector6d &tau){ // not needed anymore (functions moved to dynamic controller)
 
     //Eigen::MatrixXd m = T * K * Q;
     Eigen::MatrixXd m = params.T * params.K * params.Q;
@@ -516,21 +516,21 @@ void Rov::Hold(Eigen::Vector6d &volt){
 
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
-    volt = ThusterAllocation(-tau + tau_ref);
+    volt = ThrusterAllocation(-tau + tau_ref);
 }
 
 void Rov::moveUp(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[2] = -10.0;
-    volt = ThusterAllocation(-tau + tau_ref);
+    volt = ThrusterAllocation(-tau + tau_ref);
 }
 
 void Rov::moveDown(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[2] = 10.0;
-    volt = ThusterAllocation(-tau + tau_ref);
+    volt = ThrusterAllocation(-tau + tau_ref);
 }
 
 void Rov::moveForward(Eigen::Vector6d &volt){
@@ -538,35 +538,35 @@ void Rov::moveForward(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[0] = 10.0;
-    volt = ThusterAllocation(-tau + tau_ref);
+    volt = ThrusterAllocation(-tau + tau_ref);
 }
 
 void Rov::moveBackward(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[0] = -10.0;
-    volt = ThusterAllocation(-tau + tau_ref);
+    volt = ThrusterAllocation(-tau + tau_ref);
 }
 
 void Rov::moveLeft(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[5] = -0.1;
-    volt = ThusterAllocation(-tau + tau_ref);
+    volt = ThrusterAllocation(-tau + tau_ref);
 }
 
 void Rov::moveRight(Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     Eigen::Vector6d tau_ref; tau_ref.setZero();
     tau_ref[5] = 0.1;
-    volt = ThusterAllocation(-tau + tau_ref);
+    volt = ThrusterAllocation(-tau + tau_ref);
 }
 
 void Rov::MoveByForce(const Eigen::Vector6d &force, Eigen::Vector6d &volt){
     Eigen::Vector6d tau = bodyF_g;
     //Eigen::Vector6d tau_ref; tau_ref.setZero();
     //tau_ref[5] = 0.1;
-    volt = ThusterAllocation(-tau + force);
+    volt = ThrusterAllocation(-tau + force);
 }
 // all the previous functions are not needed anymore
 

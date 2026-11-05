@@ -171,7 +171,7 @@ public:
     double PercentageToRPM(double h);
     double RPMToPercentage(double n);
     void DirectDynamics(double h_p, double h_s, double& n_p, double& n_s, const Eigen::Vector6d& linAngVel_, Eigen::Vector6d& linAngAcc_);
-    Eigen::Vector2d ThusterAllocation(Eigen::Vector2d& tau);
+    Eigen::Vector2d ThrusterAllocation(Eigen::Vector2d& tau);
     void InverseMotorsEquations(const Eigen::Vector6d& linAngVel, Eigen::Vector2d thrust_force, double& h_p, double& h_s);
     void ThrustersSaturation(double lThruster, double rThruster, double thMin, double thMax, double& lSatOut, double& rSatOut);
     //void ThrusterDynamicAllocator(const double f_des, const double n_des, double& h_s, double &h_p);

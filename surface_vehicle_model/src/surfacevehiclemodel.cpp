@@ -134,7 +134,7 @@ Eigen::Vector3d SurfaceVehicleModel::ComputeCoriolisAndDragForces(Eigen::Vector6
 }
 
 // Paper [Simetti,Indiveri (2022)] Eq.28
-Eigen::Vector2d SurfaceVehicleModel::ThusterAllocation(Eigen::Vector2d& tau)
+Eigen::Vector2d SurfaceVehicleModel::ThrusterAllocation(Eigen::Vector2d& tau)
 {
     double forceP;
     double forceS;
